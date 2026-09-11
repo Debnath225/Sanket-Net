@@ -1,0 +1,29 @@
+Gateway/
+│
+├── main/
+│   └── Gateway.ino
+│
+├── config/
+│   ├── GatewayConfig.h
+│   ├── PinConfig.h
+│   └── SecurityConfig.h
+│
+├── network/
+│   ├── LoRaDriver.h
+│   ├── Packet.h
+│   ├── PacketCodec.h
+│   ├── CryptoManager.h
+│   ├── MeshRouter.h
+│   └── ReplayProtection.h
+│
+├── internet/
+│   ├── WiFiManager.h
+│   ├── MQTTManager.h
+│   └── BackendPublisher.h
+│
+├── storage/
+│   └── GatewayQueue.h
+│
+└── system/
+    ├── Watchdog.h
+    └── GatewayHealth.h

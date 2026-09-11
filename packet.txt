@@ -1,0 +1,35 @@
+                 SANKAT-NET
+              BINARY PROTOCOL
+
+┌─────────────────────────────────┐
+│ Packet Header                   │
+│                                 │
+│ Magic                           │
+│ Version                         │
+│ Packet Type                     │
+│ Flags                           │
+│ Source Node ID                  │
+│ Destination ID                 │
+│ Sequence Number                 │
+│ TTL                             │
+│ Hop Count                       │
+│ Timestamp                       │
+│ Nonce                           │
+├─────────────────────────────────┤
+│                                 │
+│     AUTHENTICATED ENCRYPTED     │
+│             PAYLOAD             │
+│                                 │
+│ Temperature                     │
+│ Humidity                        │
+│ Pressure                        │
+│ GPS                             │
+│ Battery                         │
+│ Risk                            │
+│ Hazard                          │
+│ Sensor status                   │
+│ ...                             │
+│                                 │
+├─────────────────────────────────┤
+│ Authentication Tag              │
+└─────────────────────────────────┘

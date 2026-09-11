@@ -1,0 +1,40 @@
+SankatNet2/
+│
+├── main/
+│   └── SankatNet.ino
+│
+├── config/
+│   ├── NodeConfig.h
+│   ├── PinConfig.h
+│   ├── Calibration.h
+│   └── SecurityConfig.h
+│
+├── sensors/
+│   ├── SensorManager.h
+│   ├── BME280Driver.h
+│   ├── ADS1115Driver.h
+│   ├── GPSManager.h
+│   ├── MotionDriver.h
+│   └── WeatherDriver.h
+│
+├── intelligence/
+│   ├── RiskEngine.h
+│   └── HazardClassifier.h
+│
+├── network/
+│   ├── LoRaDriver.h
+│   ├── Packet.h
+│   ├── PacketCodec.h
+│   ├── CryptoManager.h
+│   ├── MeshRouter.h
+│   ├── AckManager.h
+│   └── ReplayProtection.h
+│
+├── storage/
+│   ├── NVSManager.h
+│   └── PacketQueue.h
+│
+└── system/
+    ├── Watchdog.h
+    ├── FaultManager.h
+    └── BatteryManager.h

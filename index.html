@@ -1,0 +1,2081 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Sankat-Net | Environmental Intelligence Control Center</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+      :root {
+        --bg: #07111f;
+        --panel: #0c1828;
+        --panel2: #101f32;
+        --border: #1d3047;
+        --text: #e8f0f8;
+        --muted: #8293a8;
+        --green: #39d98a;
+        --yellow: #f4c95d;
+        --orange: #ff9f43;
+        --red: #ff5c68;
+        --cyan: #4cc9f0;
+        --blue: #6ea8fe;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, Arial, sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      .app {
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        overflow: hidden;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        background: #081321;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 20px 14px;
+        z-index: 10;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 4px 9px 24px;
+      }
+      .logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: linear-gradient(145deg, #143a56, #0d2438);
+        border: 1px solid #28516c;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: var(--cyan);
+      }
+      .brand strong {
+        font-size: 17px;
+        letter-spacing: 0.2px;
+      }
+      .brand span {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        margin-top: 3px;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+      }
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .nav button {
+        width: 100%;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #94a5b8;
+        padding: 11px 12px;
+        border-radius: 9px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+      .nav button:hover,
+      .nav button.active {
+        background: #102237;
+        color: #fff;
+        border-color: #1b3852;
+      }
+      .nav .ico {
+        width: 20px;
+        text-align: center;
+        font-size: 15px;
+      }
+      .sidebar-bottom {
+        margin-top: auto;
+        border-top: 1px solid var(--border);
+        padding-top: 14px;
+      }
+      .gateway-mini {
+        padding: 11px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #0b1726;
+      }
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 10px rgba(57, 217, 138, 0.7);
+        margin-right: 7px;
+      }
+      .small {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .sidebar-footer {
+        font-size: 10px;
+        color: #506176;
+        margin: 14px 8px 0;
+        line-height: 1.5;
+      }
+
+      /* MAIN */
+      .main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .topbar {
+        height: 67px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px;
+        border-bottom: 1px solid var(--border);
+        background: #091625;
+      }
+      .page-title h1 {
+        font-size: 18px;
+        margin: 0 0 3px;
+      }
+      .page-title p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .badge {
+        padding: 7px 10px;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: #a8b8c9;
+        background: #0c1b2c;
+      }
+      .btn {
+        border: 1px solid var(--border);
+        background: #0d1d30;
+        color: #cdd9e5;
+        padding: 8px 11px;
+        border-radius: 7px;
+        font-size: 11px;
+      }
+      .btn:hover {
+        background: #14283f;
+      }
+      .btn.primary {
+        background: #15324b;
+        border-color: #27536e;
+        color: #e8f7ff;
+      }
+      .btn.danger {
+        border-color: #5b2730;
+        color: #ffb2b8;
+        background: #27141a;
+      }
+
+      /* CONTENT */
+      .content {
+        padding: 18px 20px;
+        overflow: auto;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+      .grid-stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        box-shadow: var(--shadow);
+      }
+      .stat {
+        padding: 15px 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat-label {
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .stat-value {
+        font-size: 27px;
+        font-weight: 800;
+        margin-top: 7px;
+      }
+      .stat-sub {
+        font-size: 10px;
+        color: #708298;
+        margin-top: 5px;
+      }
+      .stat-accent {
+        position: absolute;
+        right: -14px;
+        bottom: -24px;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 10px solid #13283d;
+        opacity: 0.65;
+      }
+      .dot-green {
+        color: var(--green);
+      }
+      .dot-red {
+        color: var(--red);
+      }
+      .dot-yellow {
+        color: var(--yellow);
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.75fr) minmax(310px, 0.8fr);
+        gap: 14px;
+      }
+      .map-card {
+        min-height: 520px;
+        display: flex;
+        flex-direction: column;
+      }
+      .card-head {
+        min-height: 53px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .card-head h2 {
+        font-size: 13px;
+        margin: 0;
+      }
+      .card-head p {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 4px 0 0;
+      }
+      .head-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #map {
+        height: 455px;
+        border-radius: 0 0 11px 11px;
+        background: #0b1725;
+      }
+      .leaflet-container {
+        background: #0b1725;
+      }
+      .leaflet-control-attribution {
+        font-size: 8px;
+      }
+      .map-legend {
+        position: absolute;
+        z-index: 500;
+        left: 12px;
+        bottom: 12px;
+        background: rgba(7, 17, 31, 0.94);
+        border: 1px solid var(--border);
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 10px;
+      }
+      .legend-row {
+        margin: 5px 0;
+      }
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+      }
+
+      .right-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .alerts-card {
+        max-height: 300px;
+        overflow: hidden;
+      }
+      .alert-list {
+        padding: 5px 12px 10px;
+        overflow: auto;
+      }
+      .alert {
+        border-bottom: 1px solid #182a3e;
+        padding: 11px 2px;
+        display: grid;
+        grid-template-columns: 9px 1fr auto;
+        gap: 9px;
+      }
+      .alert:last-child {
+        border: 0;
+      }
+      .alert-bar {
+        width: 4px;
+        border-radius: 4px;
+        background: var(--red);
+      }
+      .alert-bar.warn {
+        background: var(--orange);
+      }
+      .alert-title {
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .alert-meta {
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .alert-time {
+        font:
+          9px "JetBrains Mono",
+          monospace;
+        color: #687b90;
+      }
+      .pipeline {
+        padding: 14px;
+      }
+      .pipeline-flow {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        overflow: auto;
+        padding: 8px 0;
+      }
+      .pipe-node {
+        min-width: 78px;
+        text-align: center;
+        padding: 9px 6px;
+        background: #0c1c2d;
+        border: 1px solid #1d344b;
+        border-radius: 8px;
+        font-size: 9px;
+        color: #a9bacb;
+      }
+      .pipe-node b {
+        display: block;
+        color: #eaf2f9;
+        font-size: 10px;
+        margin-bottom: 3px;
+      }
+      .pipe-arrow {
+        color: #52718d;
+        font-size: 13px;
+      }
+      .quick {
+        padding: 13px;
+      }
+      .quick-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+      }
+      .quick .btn {
+        text-align: center;
+      }
+
+      /* TABLES / MAP MANAGEMENT */
+      .section-title {
+        margin: 4px 0 14px;
+      }
+      .section-title h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .section-title p {
+        margin: 4px 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .toolbar-left,
+      .toolbar-right {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+      .search {
+        background: #0b1a2b;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        color: #dce7f0;
+        padding: 8px 10px;
+        min-width: 220px;
+        outline: none;
+        font-size: 11px;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 820px;
+      }
+      th,
+      td {
+        text-align: left;
+        border-bottom: 1px solid #192b3f;
+        padding: 11px 12px;
+        font-size: 10px;
+      }
+      th {
+        font-size: 9px;
+        color: #708298;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        background: #0a1726;
+      }
+      tr:hover td {
+        background: #0e1d2e;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      .status.off i {
+        background: var(--red);
+      }
+      .tag {
+        font-size: 9px;
+        border: 1px solid #29415a;
+        border-radius: 5px;
+        padding: 3px 6px;
+        color: #a7bdd0;
+      }
+      .risk {
+        font-weight: 800;
+      }
+      .risk.low {
+        color: var(--green);
+      }
+      .risk.med {
+        color: var(--yellow);
+      }
+      .risk.high {
+        color: var(--red);
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 14px;
+      }
+      .field label {
+        display: block;
+        color: #8092a7;
+        font-size: 9px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        background: #091827;
+        border: 1px solid #1d3047;
+        color: #e3edf6;
+        padding: 9px;
+        border-radius: 7px;
+        outline: none;
+        font-size: 11px;
+      }
+      .field.full {
+        grid-column: 1/-1;
+      }
+      .form-actions {
+        padding: 0 14px 14px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 7px;
+      }
+
+      .log {
+        font:
+          10px "JetBrains Mono",
+          monospace;
+        padding: 10px 13px;
+        max-height: 420px;
+        overflow: auto;
+      }
+      .log-line {
+        padding: 6px 0;
+        border-bottom: 1px solid #14263a;
+        color: #91a4b8;
+      }
+      .log-line b {
+        color: #c9d8e5;
+      }
+      .log-line .ok {
+        color: var(--green);
+      }
+      .log-line .warn {
+        color: var(--yellow);
+      }
+      .log-line .err {
+        color: var(--red);
+      }
+
+      /* SIMULATION */
+      .sim-layout {
+        display: grid;
+        grid-template-columns: 290px 1fr;
+        gap: 14px;
+      }
+      .control-card {
+        padding: 15px;
+      }
+      .control-card h3 {
+        font-size: 12px;
+        margin: 0 0 12px;
+      }
+      .control-row {
+        margin: 12px 0;
+      }
+      .control-row label {
+        font-size: 9px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #4cc9f0;
+      }
+      .event-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+      }
+      .sim-map {
+        height: 550px;
+      }
+      #simMap {
+        height: 100%;
+        border-radius: 11px;
+      }
+      .sim-status {
+        padding: 12px;
+        border-top: 1px solid var(--border);
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .sim-status strong {
+        color: #fff;
+      }
+
+      /* MODAL */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.68);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-backdrop.show {
+        display: flex;
+      }
+      .modal {
+        width: min(560px, 100%);
+        background: #0b1929;
+        border: 1px solid #26405b;
+        border-radius: 12px;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+      }
+      .modal-head {
+        padding: 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+      }
+      .modal-head h3 {
+        margin: 0;
+        font-size: 13px;
+      }
+      .modal-body {
+        padding: 15px;
+      }
+      .close {
+        background: none;
+        border: 0;
+        color: #8194a9;
+        font-size: 20px;
+      }
+
+      /* RESPONSIVE */
+      .mobile-menu {
+        display: none;
+      }
+      @media (max-width: 1050px) {
+        .grid-stats {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .dashboard-grid,
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 760px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: fixed;
+          left: -260px;
+          top: 0;
+          bottom: 0;
+          width: 250px;
+          transition: 0.2s;
+        }
+        .sidebar.open {
+          left: 0;
+        }
+        .mobile-menu {
+          display: block;
+        }
+        .grid-stats {
+          grid-template-columns: 1fr 1fr;
+        }
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+        .content {
+          padding: 12px;
+        }
+        .topbar {
+          padding: 0 12px;
+        }
+        .badge {
+          display: none;
+        }
+        .sim-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 430px) {
+        .grid-stats {
+          grid-template-columns: 1fr;
+        }
+        .top-actions .btn {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="logo">SN</div>
+          <div><strong>Sankat-Net</strong><span>Resilience Control</span></div>
+        </div>
+
+        <nav class="nav">
+          <button class="active" data-view="dashboard">
+            <span class="ico">◈</span>Control Center
+          </button>
+          <button data-view="nodes">
+            <span class="ico">⌁</span>Field Nodes
+          </button>
+          <button data-view="network">
+            <span class="ico">⌘</span>Mesh Network
+          </button>
+          <button data-view="alerts">
+            <span class="ico">!</span>Alerts & Events
+          </button>
+          <button data-view="telemetry">
+            <span class="ico">▥</span>Telemetry
+          </button>
+          <button data-view="simulation">
+            <span class="ico">◎</span>Disaster Simulation
+          </button>
+          <button data-view="architecture">
+            <span class="ico">△</span>System Architecture
+          </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="gateway-mini">
+            <div style="font-size: 11px; font-weight: 700; margin-bottom: 6px">
+              <span class="dot"></span>Gateway online
+            </div>
+            <div class="small">GW-FFFF · MQTT/TLS · Wi-Fi</div>
+            <div class="small" style="margin-top: 5px">LoRa mesh receiving</div>
+          </div>
+          <div class="sidebar-footer">
+            AI-assisted environmental intelligence<br />
+            Local edge detection · Mesh resilience · Store & forward
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button class="btn mobile-menu" onclick="toggleSidebar()">
+              ☰
+            </button>
+            <div class="page-title">
+              <h1 id="pageTitle">Environmental Intelligence Control Center</h1>
+              <p id="pageSub">
+                Real-time digital twin of the Sankat-Net disaster monitoring
+                network
+              </p>
+            </div>
+          </div>
+          <div class="top-actions">
+            <span class="badge"
+              ><span class="dot"></span> SYSTEM OPERATIONAL</span
+            >
+            <button class="btn" onclick="simulatePacket()">
+              Transmit Test Packet
+            </button>
+            <button class="btn primary" onclick="openAddNode()">
+              + Add Node
+            </button>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- DASHBOARD -->
+          <section class="view active" id="view-dashboard">
+            <div class="grid-stats">
+              <div class="card stat">
+                <div class="stat-label">Field nodes</div>
+                <div class="stat-value" id="statNodes">4</div>
+                <div class="stat-sub">
+                  <span class="dot-green">●</span> 3 online · 1 offline
+                </div>
+                <div class="stat-accent"></div>
+              </div>
+              <div class="card stat">
+                <div class="stat-label">Packets received</div>
+                <div class="stat-value" id="statPackets">12,684</div>
+                <div class="stat-sub">LoRa mesh · last 24h</div>
+                <div class="stat-accent"></div>
+              </div>
+              <div class="card stat">
+                <div class="stat-label">Active alerts</div>
+                <div class="stat-value dot-red" id="statAlerts">2</div>
+                <div class="stat-sub">1 critical · 1 warning</div>
+                <div class="stat-accent"></div>
+              </div>
+              <div class="card stat">
+                <div class="stat-label">Average risk</div>
+                <div class="stat-value dot-yellow" id="statRisk">38%</div>
+                <div class="stat-sub">Network-wide risk score</div>
+                <div class="stat-accent"></div>
+              </div>
+              <div class="card stat">
+                <div class="stat-label">Gateway queue</div>
+                <div class="stat-value" id="statQueue">0</div>
+                <div class="stat-sub">Store-and-forward packets</div>
+                <div class="stat-accent"></div>
+              </div>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="card map-card">
+                <div class="card-head">
+                  <div>
+                    <h2>Live Environmental Map</h2>
+                    <p>GPS positions · hazard state · mesh topology</p>
+                  </div>
+                  <div class="head-actions">
+                    <button class="btn" onclick="centerMap()">Center</button>
+                    <button class="btn" onclick="toggleConnections()">
+                      Connections
+                    </button>
+                    <button class="btn" onclick="triggerDemo()">
+                      Demo event
+                    </button>
+                  </div>
+                </div>
+                <div style="position: relative; flex: 1">
+                  <div id="map"></div>
+                  <div class="map-legend">
+                    <div class="legend-row">
+                      <span
+                        class="legend-dot"
+                        style="background: #39d98a"
+                      ></span
+                      >Online / normal
+                    </div>
+                    <div class="legend-row">
+                      <span
+                        class="legend-dot"
+                        style="background: #f4c95d"
+                      ></span
+                      >Warning
+                    </div>
+                    <div class="legend-row">
+                      <span
+                        class="legend-dot"
+                        style="background: #ff5c68"
+                      ></span
+                      >Critical
+                    </div>
+                    <div class="legend-row">
+                      <span
+                        class="legend-dot"
+                        style="background: #6ea8fe"
+                      ></span
+                      >Gateway
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="right-stack">
+                <div class="card alerts-card">
+                  <div class="card-head">
+                    <div>
+                      <h2>Priority Alerts</h2>
+                      <p>Edge detection → gateway → backend</p>
+                    </div>
+                    <button class="btn" onclick="switchView('alerts')">
+                      View all
+                    </button>
+                  </div>
+                  <div class="alert-list" id="alertList"></div>
+                </div>
+
+                <div class="card pipeline">
+                  <div class="card-head" style="padding: 0 0 10px; border: 0">
+                    <div>
+                      <h2>Data Pipeline</h2>
+                      <p>Exact system flow</p>
+                    </div>
+                  </div>
+                  <div class="pipeline-flow">
+                    <div class="pipe-node"><b>Sensors</b>Measure</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>ESP32</b>Edge</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>GPS</b>Localize</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>LoRa</b>Mesh</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>Gateway</b>Bridge</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>MQTT</b>TLS</div>
+                    <span class="pipe-arrow">›</span>
+                    <div class="pipe-node"><b>AI Risk</b>Action</div>
+                  </div>
+                </div>
+
+                <div class="card quick">
+                  <div class="card-head" style="padding: 0 0 10px; border: 0">
+                    <div><h2>Quick Actions</h2></div>
+                  </div>
+                  <div class="quick-grid">
+                    <button class="btn" onclick="simulatePacket()">
+                      Send telemetry
+                    </button>
+                    <button class="btn" onclick="triggerDemo()">
+                      Fire event
+                    </button>
+                    <button class="btn" onclick="switchView('simulation')">
+                      Open simulator
+                    </button>
+                    <button class="btn" onclick="switchView('network')">
+                      Inspect mesh
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- NODES -->
+          <section class="view" id="view-nodes">
+            <div class="section-title">
+              <h2>Field Nodes</h2>
+              <p>
+                Manage node identity, position, connectivity and sensor role.
+              </p>
+            </div>
+            <div class="card">
+              <div class="toolbar">
+                <div class="toolbar-left">
+                  <input
+                    class="search"
+                    id="nodeSearch"
+                    placeholder="Search node ID or type..."
+                    oninput="renderNodes()"
+                  />
+                </div>
+                <div class="toolbar-right">
+                  <button class="btn" onclick="exportNodes()">
+                    Export JSON</button
+                  ><button class="btn primary" onclick="openAddNode()">
+                    + Add Node
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Node</th>
+                      <th>Role</th>
+                      <th>Location</th>
+                      <th>Battery</th>
+                      <th>Risk</th>
+                      <th>Hazard</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="nodesTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- NETWORK -->
+          <section class="view" id="view-network">
+            <div class="section-title">
+              <h2>LoRa Mesh Network</h2>
+              <p>
+                Every field node can sense, receive and forward authenticated
+                traffic.
+              </p>
+            </div>
+            <div class="two-col">
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>Topology</h2>
+                    <p>Dynamic next-hop routing</p>
+                  </div>
+                  <button class="btn" onclick="randomizeRoutes()">
+                    Re-route
+                  </button>
+                </div>
+                <div style="padding: 14px" id="topologyBox"></div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <h2>Packet Log</h2>
+                    <p>LoRa → verification → routing → MQTT</p>
+                  </div>
+                  <button class="btn" onclick="clearLog()">Clear</button>
+                </div>
+                <div class="log" id="packetLog"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ALERTS -->
+          <section class="view" id="view-alerts">
+            <div class="section-title">
+              <h2>Alerts & Events</h2>
+              <p>
+                Localized hazard intelligence generated at the edge and
+                propagated through the mesh.
+              </p>
+            </div>
+            <div class="card">
+              <div class="toolbar">
+                <div class="toolbar-left">
+                  <button class="btn primary" onclick="triggerDemo()">
+                    Generate test alert
+                  </button>
+                  <button class="btn" onclick="clearAlerts()">
+                    Clear alerts
+                  </button>
+                </div>
+                <div class="toolbar-right">
+                  <span class="small" id="alertCountText">2 active alerts</span>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Node</th>
+                      <th>Hazard</th>
+                      <th>Priority</th>
+                      <th>Risk</th>
+                      <th>Confidence</th>
+                      <th>State</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alertsTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- TELEMETRY -->
+          <section class="view" id="view-telemetry">
+            <div class="section-title">
+              <h2>Live Telemetry</h2>
+              <p>
+                Backend representation of the compact encrypted LoRa sensor
+                payload.
+              </p>
+            </div>
+            <div class="card">
+              <div class="toolbar">
+                <div class="toolbar-left">
+                  <select
+                    class="search"
+                    id="telemetryNode"
+                    onchange="renderTelemetry()"
+                  ></select>
+                  <button class="btn" onclick="simulatePacket()">
+                    Generate reading
+                  </button>
+                </div>
+                <div class="toolbar-right">
+                  <span class="small"
+                    >MQTT topic: sankatnet/telemetry/&lt;NODE&gt;</span
+                  >
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Temperature</th>
+                      <th>Humidity</th>
+                      <th>Pressure</th>
+                      <th>MQ2</th>
+                      <th>MQ135</th>
+                      <th>Water</th>
+                      <th>Soil</th>
+                      <th>Risk</th>
+                    </tr>
+                  </thead>
+                  <tbody id="telemetryTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- SIMULATION -->
+          <section class="view" id="view-simulation">
+            <div class="section-title">
+              <h2>Disaster Simulation</h2>
+              <p>
+                Demonstrate localized detection, packet routing and risk
+                escalation without physical hardware.
+              </p>
+            </div>
+            <div class="sim-layout">
+              <div class="card control-card">
+                <h3>Event Controls</h3>
+                <div class="control-row">
+                  <label
+                    ><span>Origin node</span
+                    ><b id="originLabel">NODE-01</b></label
+                  ><select
+                    class="search"
+                    id="originSelect"
+                    style="width: 100%"
+                    onchange="updateOrigin()"
+                  ></select>
+                </div>
+                <div class="control-row">
+                  <label
+                    ><span>Intensity</span><b id="intensityLabel">70%</b></label
+                  ><input
+                    id="intensity"
+                    type="range"
+                    min="10"
+                    max="100"
+                    value="70"
+                    oninput="intensityLabel.textContent = this.value + '%'"
+                  />
+                </div>
+                <div class="control-row">
+                  <label><span>Packet hops</span><b id="hopLabel">3</b></label
+                  ><input
+                    id="hops"
+                    type="range"
+                    min="1"
+                    max="5"
+                    value="3"
+                    oninput="hopLabel.textContent = this.value"
+                  />
+                </div>
+                <h3 style="margin-top: 20px">Hazard injection</h3>
+                <div class="event-buttons">
+                  <button class="btn" onclick="simulateHazard('FIRE')">
+                    🔥 Fire
+                  </button>
+                  <button class="btn" onclick="simulateHazard('FLOOD')">
+                    💧 Flood
+                  </button>
+                  <button class="btn" onclick="simulateHazard('SEISMIC')">
+                    〽 Seismic
+                  </button>
+                  <button class="btn" onclick="simulateHazard('POLLUTION')">
+                    ☁ Pollution
+                  </button>
+                </div>
+                <button
+                  class="btn danger"
+                  style="width: 100%; margin-top: 8px"
+                  onclick="resetSimulation()"
+                >
+                  Reset simulation
+                </button>
+                <div class="sim-status" id="simStatus">
+                  Ready. Select a hazard to inject an event.
+                </div>
+              </div>
+              <div class="card sim-map"><div id="simMap"></div></div>
+            </div>
+          </section>
+
+          <!-- ARCHITECTURE -->
+          <section class="view" id="view-architecture">
+            <div class="section-title">
+              <h2>System Architecture</h2>
+              <p>
+                Sankat-Net end-to-end resilient environmental monitoring stack.
+              </p>
+            </div>
+            <div class="two-col">
+              <div class="card" style="padding: 18px">
+                <h3 style="font-size: 13px; margin-top: 0">Field Node</h3>
+                <div class="pipeline-flow" style="flex-wrap: wrap">
+                  <div class="pipe-node"><b>BME280</b>Temp/RH/Pressure</div>
+                  <div class="pipe-node"><b>MQ-2</b>Smoke/Gas</div>
+                  <div class="pipe-node"><b>MQ-135</b>Air Quality</div>
+                  <div class="pipe-node"><b>Flame</b>Fire</div>
+                  <div class="pipe-node"><b>Water</b>Flood</div>
+                  <div class="pipe-node"><b>Soil</b>Moisture/Temp</div>
+                  <div class="pipe-node"><b>MPU6050</b>Vibration</div>
+                  <div class="pipe-node"><b>GPS</b>Position</div>
+                  <div class="pipe-node"><b>ADS1115</b>Analog ADC</div>
+                </div>
+                <div
+                  style="
+                    margin-top: 16px;
+                    padding: 13px;
+                    background: #091827;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    font: 10px JetBrains Mono;
+                    color: #9db0c3;
+                  "
+                >
+                  SENSE → PROCESS → LOCAL RISK → PACKET → AES-256-GCM → TRANSMIT
+                </div>
+              </div>
+              <div class="card" style="padding: 18px">
+                <h3 style="font-size: 13px; margin-top: 0">
+                  Resilient Network + Backend
+                </h3>
+                <div class="pipeline-flow" style="flex-wrap: wrap">
+                  <div class="pipe-node"><b>SX1278</b>LoRa 433 MHz</div>
+                  <div class="pipe-node"><b>Mesh Router</b>TTL/Hops</div>
+                  <div class="pipe-node"><b>Replay</b>Protection</div>
+                  <div class="pipe-node"><b>ACK</b>Retry</div>
+                  <div class="pipe-node"><b>Gateway</b>ESP32</div>
+                  <div class="pipe-node"><b>Queue</b>Store/Forward</div>
+                  <div class="pipe-node"><b>MQTT/TLS</b>Internet</div>
+                  <div class="pipe-node"><b>Backend</b>Node.js</div>
+                  <div class="pipe-node"><b>PostgreSQL</b>History</div>
+                  <div class="pipe-node"><b>Dashboard</b>WebSocket</div>
+                </div>
+                <div
+                  style="
+                    margin-top: 16px;
+                    padding: 13px;
+                    background: #091827;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    font: 10px JetBrains Mono;
+                    color: #9db0c3;
+                  "
+                >
+                  RECEIVE → VERIFY → DECRYPT → REPLAY CHECK → ROUTE / PUBLISH
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- NODE MODAL -->
+    <div class="modal-backdrop" id="nodeModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3 id="modalTitle">Add Field Node</h3>
+          <button class="close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid" style="padding: 0">
+            <div class="field">
+              <label>Node ID</label><input id="fId" placeholder="NODE-05" />
+            </div>
+            <div class="field">
+              <label>Role</label>
+              <select id="fRole">
+                <option>Fire + Pollution</option>
+                <option>Flood + Soil</option>
+                <option>Seismic + Environment</option>
+                <option>Water Quality</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Latitude</label
+              ><input id="fLat" type="number" step="0.000001" />
+            </div>
+            <div class="field">
+              <label>Longitude</label
+              ><input id="fLon" type="number" step="0.000001" />
+            </div>
+            <div class="field">
+              <label>Battery %</label
+              ><input id="fBattery" type="number" min="0" max="100" />
+            </div>
+            <div class="field">
+              <label>TX interval (ms)</label><input id="fTx" type="number" />
+            </div>
+            <div class="field full">
+              <label>Online</label
+              ><select id="fOnline">
+                <option value="true">Online</option>
+                <option value="false">Offline</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal()">Cancel</button
+          ><button class="btn primary" onclick="saveNode()">Save node</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+      /* ============================================================
+   SANKAT-NET DIGITAL TWIN
+   Front-end-only demonstration of the locked architecture.
+   No real MQTT/LoRa traffic is generated by this page.
+   ============================================================ */
+
+      const defaultNodes = [
+        {
+          id: "NODE-01",
+          role: "Fire + Pollution",
+          lat: 22.5726,
+          lon: 88.3639,
+          battery: 91,
+          tx: 30000,
+          online: true,
+          risk: 72,
+          hazard: "FIRE",
+        },
+        {
+          id: "NODE-02",
+          role: "Flood + Soil",
+          lat: 22.5795,
+          lon: 88.3712,
+          battery: 84,
+          tx: 30000,
+          online: true,
+          risk: 31,
+          hazard: "NORMAL",
+        },
+        {
+          id: "NODE-03",
+          role: "Seismic + Environment",
+          lat: 22.5684,
+          lon: 88.3521,
+          battery: 76,
+          tx: 30000,
+          online: true,
+          risk: 42,
+          hazard: "NORMAL",
+        },
+        {
+          id: "NODE-04",
+          role: "Water Quality",
+          lat: 22.584,
+          lon: 88.357,
+          battery: 23,
+          tx: 60000,
+          online: false,
+          risk: 18,
+          hazard: "NORMAL",
+        },
+      ];
+
+      let nodes =
+        JSON.parse(localStorage.getItem("sankat_nodes") || "null") ||
+        defaultNodes;
+      let alerts = JSON.parse(
+        localStorage.getItem("sankat_alerts") || "null",
+      ) || [
+        {
+          time: "20:04:18",
+          node: "NODE-01",
+          hazard: "FIRE",
+          priority: "CRITICAL",
+          risk: 91,
+          confidence: 94,
+          state: "ACTIVE",
+        },
+        {
+          time: "19:57:43",
+          node: "NODE-02",
+          hazard: "FLOOD",
+          priority: "HIGH",
+          risk: 67,
+          confidence: 88,
+          state: "ACTIVE",
+        },
+      ];
+      let telemetry = [];
+      let connections = true;
+      let map, simMap;
+      let markers = {},
+        simMarkers = {},
+        lines = [];
+      let simOrigin = "NODE-01";
+
+      const pageInfo = {
+        dashboard: [
+          "Environmental Intelligence Control Center",
+          "Real-time digital twin of the Sankat-Net disaster monitoring network",
+        ],
+        nodes: [
+          "Field Node Management",
+          "Configure and monitor distributed environmental sensing nodes",
+        ],
+        network: [
+          "LoRa Mesh Network",
+          "Dynamic routing, packet forwarding and resilient communication",
+        ],
+        alerts: [
+          "Alerts & Events",
+          "Localized hazard intelligence and actionable incident state",
+        ],
+        telemetry: [
+          "Live Telemetry",
+          "Sensor readings decoded at the gateway for backend services",
+        ],
+        simulation: [
+          "Disaster Simulation",
+          "Inject hazards and visualize resilient packet propagation",
+        ],
+        architecture: [
+          "System Architecture",
+          "Field sensing → resilient mesh → secure gateway → AI backend",
+        ],
+      };
+
+      function save() {
+        localStorage.setItem("sankat_nodes", JSON.stringify(nodes));
+        localStorage.setItem("sankat_alerts", JSON.stringify(alerts));
+      }
+
+      function switchView(name) {
+        document
+          .querySelectorAll(".view")
+          .forEach((v) => v.classList.remove("active"));
+        document.getElementById("view-" + name).classList.add("active");
+        document
+          .querySelectorAll(".nav button")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.view === name),
+          );
+        document.getElementById("pageTitle").textContent = pageInfo[name][0];
+        document.getElementById("pageSub").textContent = pageInfo[name][1];
+        if (name === "nodes") renderNodes();
+        if (name === "network") renderTopology();
+        if (name === "alerts") renderAlertsTable();
+        if (name === "telemetry") renderTelemetry();
+        if (name === "simulation") {
+          setTimeout(() => simMap.invalidateSize(), 100);
+        }
+        document.getElementById("sidebar").classList.remove("open");
+      }
+
+      document
+        .querySelectorAll(".nav button")
+        .forEach((b) => (b.onclick = () => switchView(b.dataset.view)));
+
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("open");
+      }
+
+      function markerIcon(status, risk) {
+        let c = !status
+          ? "#ff5c68"
+          : risk >= 70
+            ? "#ff5c68"
+            : risk >= 45
+              ? "#f4c95d"
+              : "#39d98a";
+        return L.divIcon({
+          className: "sn-marker",
+          html: `<div style="width:16px;height:16px;border-radius:50%;background:${c};border:3px solid #07111f;box-shadow:0 0 0 2px ${c},0 0 18px ${c}88"></div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+      }
+      function gatewayIcon() {
+        return L.divIcon({
+          className: "gw-marker",
+          html: `<div style="width:20px;height:20px;border-radius:5px;background:#173c59;border:2px solid #6ea8fe;box-shadow:0 0 18px #6ea8fe66;display:grid;place-items:center;color:#bfe3ff;font-size:10px;font-weight:800">G</div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+      }
+
+      function initMap() {
+        map = L.map("map", { zoomControl: false }).setView(
+          [22.575, 88.363],
+          13,
+        );
+        L.control.zoom({ position: "bottomright" }).addTo(map);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "© OpenStreetMap",
+        }).addTo(map);
+        updateMap();
+      }
+      function updateMap() {
+        if (!map) return;
+        Object.values(markers).forEach((m) => map.removeLayer(m));
+        markers = {};
+        lines.forEach((l) => map.removeLayer(l));
+        lines = [];
+        const gw = L.marker([22.575, 88.363], { icon: gatewayIcon() })
+          .addTo(map)
+          .bindPopup(
+            "<b>GW-FFFF</b><br>Gateway · MQTT/TLS<br>LoRa mesh bridge",
+          );
+        nodes.forEach((n) => {
+          const m = L.marker([n.lat, n.lon], {
+            icon: markerIcon(n.online, n.risk),
+          }).addTo(map);
+          m.bindPopup(
+            `<b>${n.id}</b><br>${n.role}<br>Risk: <b>${n.risk}%</b><br>Battery: ${n.battery}%<br>Hazard: ${n.hazard}<br>Status: ${n.online ? "ONLINE" : "OFFLINE"}`,
+          );
+          markers[n.id] = m;
+        });
+        if (connections) {
+          nodes
+            .filter((n) => n.online)
+            .forEach((n) => {
+              const nearest = nodes
+                .filter((x) => x.id !== n.id && x.online)
+                .sort((a, b) => dist(n, a) - dist(n, b))[0];
+              if (nearest)
+                lines.push(
+                  L.polyline(
+                    [
+                      [n.lat, n.lon],
+                      [nearest.lat, nearest.lon],
+                    ],
+                    { color: "#31516d", weight: 1.4, dashArray: "5 6" },
+                  ).addTo(map),
+                );
+              lines.push(
+                L.polyline(
+                  [
+                    [n.lat, n.lon],
+                    [22.575, 88.363],
+                  ],
+                  {
+                    color: "#1b3850",
+                    weight: 0.9,
+                    dashArray: "3 7",
+                    opacity: 0.65,
+                  },
+                ).addTo(map),
+              );
+            });
+        }
+      }
+      function dist(a, b) {
+        return Math.hypot(a.lat - b.lat, a.lon - b.lon);
+      }
+      function centerMap() {
+        map.setView([22.575, 88.363], 13);
+      }
+      function toggleConnections() {
+        connections = !connections;
+        updateMap();
+      }
+
+      function renderStats() {
+        document.getElementById("statNodes").textContent = nodes.length;
+        document.getElementById("statPackets").textContent = (
+          12684 + Math.floor(Math.random() * 30)
+        ).toLocaleString();
+        document.getElementById("statAlerts").textContent = alerts.length;
+        let avg = Math.round(
+          nodes.reduce((s, n) => s + n.risk, 0) / nodes.length,
+        );
+        document.getElementById("statRisk").textContent = avg + "%";
+        document.getElementById("statQueue").textContent = Math.max(
+          0,
+          Math.floor(Math.random() * 4),
+        );
+      }
+      function alertHTML(a) {
+        const warn = a.priority !== "CRITICAL";
+        return `<div class="alert"><span class="alert-bar ${warn ? "warn" : ""}"></span><div><div class="alert-title">${a.hazard} · ${a.node}</div><div class="alert-meta">${a.priority} · risk ${a.risk}% · confidence ${a.confidence}%</div></div><span class="alert-time">${a.time}</span></div>`;
+      }
+      function renderDashboardAlerts() {
+        document.getElementById("alertList").innerHTML = alerts.length
+          ? alerts.slice(0, 4).map(alertHTML).join("")
+          : `<div class="small" style="padding:15px">No active alerts.</div>`;
+      }
+      function renderNodes() {
+        const q = (
+          document.getElementById("nodeSearch")?.value || ""
+        ).toLowerCase();
+        document.getElementById("nodesTable").innerHTML = nodes
+          .filter((n) => (n.id + n.role + n.hazard).toLowerCase().includes(q))
+          .map((n, i) => {
+            const rc = n.risk >= 70 ? "high" : n.risk >= 45 ? "med" : "low";
+            return `<tr>
+   <td><b>${n.id}</b><br><span class="small">${n.tx} ms interval</span></td>
+   <td><span class="tag">${n.role}</span></td>
+   <td>${n.lat.toFixed(5)}, ${n.lon.toFixed(5)}</td>
+   <td>${n.battery}%</td>
+   <td><span class="risk ${rc}">${n.risk}%</span></td>
+   <td>${n.hazard}</td>
+   <td><span class="status ${n.online ? "" : "off"}"><i></i>${n.online ? "ONLINE" : "OFFLINE"}</span></td>
+   <td><button class="btn" onclick="editNode(${i})">Edit</button> <button class="btn" onclick="deleteNode(${i})">Delete</button></td>
+  </tr>`;
+          })
+          .join("");
+      }
+      function openAddNode() {
+        document.getElementById("modalTitle").textContent = "Add Field Node";
+        ["fId", "fLat", "fLon", "fBattery", "fTx"].forEach(
+          (id) => (document.getElementById(id).value = ""),
+        );
+        document.getElementById("fRole").selectedIndex = 0;
+        document.getElementById("fOnline").value = "true";
+        document.getElementById("nodeModal").dataset.edit = "-1";
+        document.getElementById("nodeModal").classList.add("show");
+      }
+      function editNode(i) {
+        const n = nodes[i];
+        document.getElementById("modalTitle").textContent = "Edit " + n.id;
+        fId.value = n.id;
+        fRole.value = n.role;
+        fLat.value = n.lat;
+        fLon.value = n.lon;
+        fBattery.value = n.battery;
+        fTx.value = n.tx;
+        fOnline.value = String(n.online);
+        document.getElementById("nodeModal").dataset.edit = i;
+        document.getElementById("nodeModal").classList.add("show");
+      }
+      function closeModal() {
+        document.getElementById("nodeModal").classList.remove("show");
+      }
+      function saveNode() {
+        const id = fId.value.trim().toUpperCase();
+        if (!id || !fLat.value || !fLon.value)
+          return alert("Node ID, latitude and longitude are required.");
+        const obj = {
+          id,
+          role: fRole.value,
+          lat: +fLat.value,
+          lon: +fLon.value,
+          battery: +fBattery.value || 0,
+          tx: +fTx.value || 30000,
+          online: fOnline.value === "true",
+          risk: 0,
+          hazard: "NORMAL",
+        };
+        const i = +document.getElementById("nodeModal").dataset.edit;
+        if (i >= 0) {
+          obj.risk = nodes[i].risk;
+          obj.hazard = nodes[i].hazard;
+          nodes[i] = obj;
+        } else nodes.push(obj);
+        save();
+        closeModal();
+        renderNodes();
+        refreshAll();
+      }
+      function deleteNode(i) {
+        if (confirm("Delete " + nodes[i].id + "?")) {
+          nodes.splice(i, 1);
+          save();
+          renderNodes();
+          refreshAll();
+        }
+      }
+
+      function renderTopology() {
+        const rows = nodes
+          .map((n) => {
+            const nh = nodes
+              .filter((x) => x.id !== n.id && x.online)
+              .sort((a, b) => dist(n, a) - dist(n, b))[0];
+            return `<div style="padding:12px;border-bottom:1px solid #182a3e;display:grid;grid-template-columns:100px 1fr 100px;gap:8px;align-items:center">
+    <b style="font-size:10px">${n.id}</b><span class="small">${n.online ? "Active mesh participant" : "Offline — route unavailable"}</span><span class="tag">${nh ? nh.id : "—"}</span>
+  </div>`;
+          })
+          .join("");
+        document.getElementById("topologyBox").innerHTML =
+          `<div style="padding:8px 12px;color:#71869b;font-size:9px;text-transform:uppercase">Source · State · Next hop</div>${rows}`;
+      }
+      function randomizeRoutes() {
+        renderTopology();
+        addLog(
+          "ROUTE",
+          "Mesh route table refreshed; next-hop selection recalculated.",
+          "ok",
+        );
+      }
+      function addLog(type, msg, state = "ok") {
+        const el = document.getElementById("packetLog");
+        const t = new Date().toLocaleTimeString();
+        el.insertAdjacentHTML(
+          "afterbegin",
+          `<div class="log-line"><b>${t}</b> [${type}] <span class="${state}">${msg}</span></div>`,
+        );
+        while (el.children.length > 60) el.lastChild.remove();
+      }
+      function clearLog() {
+        document.getElementById("packetLog").innerHTML = "";
+      }
+
+      function renderAlertsTable() {
+        document.getElementById("alertsTable").innerHTML = alerts
+          .map(
+            (a) => `<tr>
+ <td>${a.time}</td><td><b>${a.node}</b></td><td>${a.hazard}</td>
+ <td><span class="tag">${a.priority}</span></td><td><span class="risk ${a.risk >= 70 ? "high" : a.risk >= 45 ? "med" : "low"}">${a.risk}%</span></td>
+ <td>${a.confidence}%</td><td><span class="status"><i></i>${a.state}</span></td>
+ </tr>`,
+          )
+          .join("");
+        document.getElementById("alertCountText").textContent =
+          alerts.length + " active alert" + (alerts.length === 1 ? "" : "s");
+      }
+      function clearAlerts() {
+        alerts = [];
+        save();
+        refreshAll();
+        addLog("ALERT", "Active alert list cleared by administrator.", "warn");
+      }
+
+      function telemetryFor(n) {
+        return {
+          time: new Date().toLocaleTimeString(),
+          temp: (26 + Math.random() * 8).toFixed(2),
+          hum: (55 + Math.random() * 30).toFixed(2),
+          pressure: Math.round(100500 + Math.random() * 600),
+          mq2: Math.round(180 + Math.random() * 300),
+          mq135: Math.round(250 + Math.random() * 400),
+          water: Math.round(70 + Math.random() * 100),
+          soil: Math.round(400 + Math.random() * 300),
+          risk: n.risk,
+        };
+      }
+      function renderTelemetry() {
+        const sel = document.getElementById("telemetryNode");
+        if (sel.options.length !== nodes.length)
+          sel.innerHTML = nodes.map((n) => `<option>${n.id}</option>`).join("");
+        const n = nodes.find((x) => x.id === sel.value) || nodes[0];
+        if (!n) return;
+        if (!telemetry[n.id]) telemetry[n.id] = [];
+        const arr = telemetry[n.id];
+        if (!arr.length)
+          for (let i = 0; i < 8; i++) arr.unshift(telemetryFor(n));
+        document.getElementById("telemetryTable").innerHTML = arr
+          .slice(0, 15)
+          .map(
+            (x) => `<tr>
+ <td>${x.time}</td><td>${x.temp} °C</td><td>${x.hum}%</td><td>${x.pressure} Pa</td>
+ <td>${x.mq2}</td><td>${x.mq135}</td><td>${x.water}</td><td>${x.soil}</td><td><b>${x.risk}%</b></td></tr>`,
+          )
+          .join("");
+      }
+
+      function simulatePacket() {
+        const n = nodes[Math.floor(Math.random() * nodes.length)];
+        const t = telemetryFor(n);
+        if (!telemetry[n.id]) telemetry[n.id] = [];
+        telemetry[n.id].unshift(t);
+        addLog(
+          "RX",
+          `${n.id} → binary packet received → authenticated → decrypted.`,
+          "ok",
+        );
+        setTimeout(
+          () =>
+            addLog(
+              "ROUTE",
+              `${n.id} → next hop → GW-FFFF · TTL decremented.`,
+              "ok",
+            ),
+          250,
+        );
+        setTimeout(
+          () =>
+            addLog(
+              "MQTT",
+              `Published ${n.id} telemetry to sankatnet/telemetry/${n.id}.`,
+              "ok",
+            ),
+          500,
+        );
+        renderTelemetry();
+        renderStats();
+      }
+
+      function triggerDemo() {
+        simulateHazard("FIRE");
+      }
+
+      function simulateHazard(type) {
+        const n = nodes.find((x) => x.id === simOrigin) || nodes[0];
+        const intensity = +document.getElementById("intensity").value;
+        const risk = Math.min(
+          100,
+          Math.round(intensity * 0.95 + Math.random() * 8),
+        );
+        n.risk = risk;
+        n.hazard = type;
+        if (!n.online) n.online = true;
+        const priority =
+          risk >= 80 ? "CRITICAL" : risk >= 55 ? "HIGH" : "MEDIUM";
+        const now = new Date().toLocaleTimeString();
+        alerts.unshift({
+          time: now,
+          node: n.id,
+          hazard: type,
+          priority,
+          risk,
+          confidence: Math.min(99, Math.round(75 + intensity * 0.22)),
+          state: "ACTIVE",
+        });
+        save();
+        refreshAll();
+        document.getElementById("simStatus").innerHTML =
+          `<strong>${type} detected at ${n.id}</strong><br>Risk ${risk}% · ${priority} priority · edge classifier triggered. Packet routed through mesh to GW-FFFF.`;
+        addLog(
+          "ALERT",
+          `${n.id} generated ${type} alert (${risk}%). Encrypted alert forwarded to gateway.`,
+          "warn",
+        );
+        animatePacket(n);
+      }
+      function updateOrigin() {
+        simOrigin = document.getElementById("originSelect").value;
+        document.getElementById("originLabel").textContent = simOrigin;
+      }
+      function initSimulation() {
+        simMap = L.map("simMap", { zoomControl: false }).setView(
+          [22.575, 88.363],
+          13,
+        );
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}.png", {
+          maxZoom: 19,
+          attribution: "© OpenStreetMap",
+        }).addTo(simMap);
+        document.getElementById("originSelect").innerHTML = nodes
+          .map((n) => `<option>${n.id}</option>`)
+          .join("");
+        simMapUpdate();
+      }
+      function simMapUpdate() {
+        if (!simMap) return;
+        Object.values(simMarkers).forEach((m) => simMap.removeLayer(m));
+        simMarkers = {};
+        nodes.forEach((n) => {
+          simMarkers[n.id] = L.marker([n.lat, n.lon], {
+            icon: markerIcon(n.online, n.risk),
+          })
+            .addTo(simMap)
+            .bindPopup(`<b>${n.id}</b><br>${n.hazard} · ${n.risk}%`);
+        });
+        L.marker([22.575, 88.363], { icon: gatewayIcon() })
+          .addTo(simMap)
+          .bindPopup("GW-FFFF");
+      }
+      function animatePacket(n) {
+        if (!simMap) return;
+        const gw = [22.575, 88.363],
+          start = [n.lat, n.lon];
+        const line = L.polyline([start, gw], {
+          color: "#4cc9f0",
+          weight: 3,
+          dashArray: "6 7",
+        }).addTo(simMap);
+        let marker = L.circleMarker(start, { radius: 5 }).addTo(simMap);
+        let p = 0;
+        const timer = setInterval(() => {
+          p += 0.025;
+          const lat = start[0] + (gw[0] - start[0]) * p;
+          const lon = start[1] + (gw[1] - start[1]) * p;
+          marker.setLatLng([lat, lon]);
+          if (p >= 1) {
+            clearInterval(timer);
+            simMap.removeLayer(marker);
+            setTimeout(() => simMap.removeLayer(line), 700);
+          }
+        }, 35);
+      }
+      function resetSimulation() {
+        nodes.forEach((n, i) => {
+          n.risk = [72, 31, 42, 18][i] || 0;
+          n.hazard = "NORMAL";
+        });
+        alerts = alerts.slice(0, 2);
+        save();
+        refreshAll();
+        document.getElementById("simStatus").innerHTML =
+          "Simulation reset. Network returned to baseline.";
+        addLog("SIM", "Simulation reset to baseline.", "ok");
+      }
+
+      function exportNodes() {
+        const blob = new Blob([JSON.stringify(nodes, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "sankat-net-nodes.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+      function refreshAll() {
+        renderStats();
+        renderDashboardAlerts();
+        renderNodes();
+        renderAlertsTable();
+        renderTopology();
+        updateMap();
+        simMapUpdate();
+      }
+      const BACKEND_URL = window.SANKAT_BACKEND_URL || "http://localhost:4000";
+      function applyBackendSnapshot(snapshot) {
+        const telemetryRecords = snapshot.telemetry || [];
+        const backendAlerts = snapshot.alerts || [];
+        telemetryRecords.forEach((record) => {
+          const id = String(record.node_id || "NODE-UNKNOWN");
+          let node = nodes.find((item) => item.id === id);
+          if (!node) {
+            node = {
+              id,
+              role: "Live MQTT node",
+              lat: Number(record.latitude || 0),
+              lon: Number(record.longitude || 0),
+              battery: Number(record.battery_mv || 0) / 40,
+              tx: 30000,
+              online: true,
+              risk: 0,
+              hazard: "NORMAL",
+            };
+            nodes.push(node);
+          }
+          const prediction = record.prediction || {};
+          node.online = true;
+          node.risk = Number(prediction.risk || record.risk_score || 0);
+          node.hazard = String(
+            prediction.hazard || record.hazard || "NORMAL",
+          ).toUpperCase();
+          if (record.latitude !== undefined) node.lat = Number(record.latitude);
+          if (record.longitude !== undefined)
+            node.lon = Number(record.longitude);
+          telemetry[id] = telemetry[id] || [];
+          telemetry[id].unshift({
+            time: new Date(
+              record.receivedAt || Date.now(),
+            ).toLocaleTimeString(),
+            temp: Number(record.temperature || 0).toFixed(2),
+            hum: Number(record.humidity || 0).toFixed(2),
+            pressure: Math.round(record.pressure_pa || 0),
+            mq2: record.mq2 || 0,
+            mq135: record.mq135 || 0,
+            water: record.water_level || 0,
+            soil: record.soil_moisture || 0,
+            risk: node.risk,
+          });
+        });
+        if (backendAlerts.length) {
+          alerts = backendAlerts.map((item) => ({
+            time: new Date(
+              item.createdAt || item.receivedAt || Date.now(),
+            ).toLocaleTimeString(),
+            node: String(item.node_id || "NODE-UNKNOWN"),
+            hazard: String(item.hazard || "UNKNOWN").toUpperCase(),
+            priority:
+              item.risk >= 80
+                ? "CRITICAL"
+                : item.risk >= 55
+                  ? "HIGH"
+                  : "MEDIUM",
+            risk: Number(item.risk || 0),
+            confidence: Number(item.confidence || 0),
+            state: "ACTIVE",
+          }));
+        }
+        save();
+        refreshAll();
+      }
+      async function connectBackend() {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/snapshot`);
+          if (response.ok) applyBackendSnapshot(await response.json());
+          addLog(
+            "BACKEND",
+            "Node.js backend connected · MQTT snapshot loaded.",
+            "ok",
+          );
+        } catch (error) {
+          addLog(
+            "BACKEND",
+            "Backend offline · showing local simulation data.",
+            "warn",
+          );
+        }
+        try {
+          const socket = new WebSocket(
+            BACKEND_URL.replace(/^http/, "ws") + "/ws",
+          );
+          socket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === "snapshot") applyBackendSnapshot(message.data);
+            else if (message.type === "telemetry" || message.type === "alerts")
+              connectBackend();
+          };
+          socket.onclose = () => setTimeout(connectBackend, 5000);
+        } catch (error) {
+          /* Browser may block WebSocket while opened from file://. */
+        }
+      }
+      function init() {
+        initMap();
+        initSimulation();
+        refreshAll();
+        renderTelemetry();
+        connectBackend();
+        addLog(
+          "SYSTEM",
+          "Gateway GW-FFFF online · LoRa receiver ready · MQTT/TLS connected.",
+          "ok",
+        );
+        addLog(
+          "SYSTEM",
+          "Store-and-forward queue initialized · capacity 64.",
+          "ok",
+        );
+        addLog("SECURITY", "AES-256-GCM packet authentication required.", "ok");
+        setInterval(() => {
+          renderStats();
+        }, 5000);
+        setInterval(() => {
+          nodes.forEach((n) => {
+            if (n.online && Math.random() < 0.2)
+              n.battery = Math.max(5, n.battery - 0.1);
+          });
+          save();
+          refreshAll();
+        }, 15000);
+      }
+      window.addEventListener("load", init);
+    </script>
+  </body>
+</html>

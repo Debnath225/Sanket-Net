@@ -1,0 +1,11 @@
+sankatnet/telemetry/NODE-01
+sankatnet/alerts/NODE-01
+sankatnet/heartbeat/NODE-01
+sankatnet/route/NODE-01
+sankatnet/discovery/NODE-01
+sankatnet/config/NODE-01
+
+sankatnet/gateway/status
+sankatnet/gateway/health
+
+sankatnet/command/NODE-01

@@ -1,0 +1,58 @@
+const recordLimit = (value, fallback = 100) => {
+  const limit = Number(value || fallback);
+  return Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 500) : fallback;
+};
+
+const nodeFromRecord = (record, now) => ({
+  id: String(record.node_id || record.source_node || "UNKNOWN"),
+  role: record.role || "Field node",
+  latitude: Number(record.latitude),
+  longitude: Number(record.longitude),
+  batteryMv: record.battery_mv ?? null,
+  risk: record.prediction?.risk ?? record.risk_score ?? 0,
+  hazard: record.prediction?.hazard || record.hazard || "NORMAL",
+  lastSeen: record.receivedAt || null,
+  online:
+    !!record.receivedAt && now - new Date(record.receivedAt).getTime() < 5 * 60 * 1000,
+});
+
+export function createDashboardController(store) {
+  const nodes = () => {
+    const latestByNode = new Map();
+    for (const record of store.state.telemetry) {
+      const id = String(record.node_id || record.source_node || "UNKNOWN");
+      if (!latestByNode.has(id)) latestByNode.set(id, record);
+    }
+    const now = Date.now();
+    return [...latestByNode.values()]
+      .map((record) => nodeFromRecord(record, now))
+      .sort((first, second) => first.id.localeCompare(second.id));
+  };
+
+  return {
+    snapshot: (_request, response) => response.json(store.snapshot()),
+    telemetry: (request, response) =>
+      response.json(store.state.telemetry.slice(0, recordLimit(request.query.limit))),
+    alerts: (request, response) =>
+      response.json(store.state.alerts.slice(0, recordLimit(request.query.limit))),
+    events: (request, response) =>
+      response.json(store.state.events.slice(0, recordLimit(request.query.limit))),
+    listNodes: (_request, response) => response.json(nodes()),
+    node: (request, response) => {
+      const node = nodes().find((item) => item.id === request.params.nodeId);
+      if (!node) return response.status(404).json({ error: "node_not_found" });
+      response.json(node);
+    },
+    networkSummary: (_request, response) => {
+      const allNodes = nodes();
+      response.json({
+        generatedAt: new Date().toISOString(),
+        nodes: allNodes.length,
+        onlineNodes: allNodes.filter((node) => node.online).length,
+        activeAlerts: store.state.alerts.length,
+        telemetryRecords: store.state.telemetry.length,
+        latestEvent: store.state.events[0] || null,
+      });
+    },
+  };
+}
