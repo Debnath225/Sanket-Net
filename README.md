@@ -1,2 +1,0 @@
-# Sanket-Net
-disaster management
