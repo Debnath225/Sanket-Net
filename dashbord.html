@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankat-Net | Environmental Intelligence</title>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+:root{
+  --bg:#07111f;
+  --bg2:#0b1728;
+  --panel:#0d1b2d;
+  --panel2:#101f33;
+  --border:rgba(255,255,255,.08);
+  --text:#edf6ff;
+  --muted:#8295aa;
+  --blue:#38bdf8;
+  --cyan:#22d3ee;
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --purple:#a78bfa;
+  --sidebar:250px;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 80% 0%,rgba(14,165,233,.10),transparent 30%),
+    radial-gradient(circle at 20% 100%,rgba(59,130,246,.06),transparent 30%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+  width:var(--sidebar);
+  height:100vh;
+  background:rgba(7,17,31,.94);
+  border-right:1px solid var(--border);
+  padding:24px 16px;
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:4px 10px 28px;
+}
+
+.logo-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#0ea5e9,#2563eb);
+  font-size:21px;
+  box-shadow:0 8px 25px rgba(14,165,233,.2);
+}
+
+.logo h2{
+  font-size:17px;
+  letter-spacing:.5px;
+}
+
+.logo span{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  margin-top:3px;
+  letter-spacing:1px;
+}
+
+.nav-title{
+  color:#52667c;
+  font-size:10px;
+  letter-spacing:1.5px;
+  font-weight:700;
+  padding:0 12px 9px;
+  text-transform:uppercase;
+}
+
+.nav{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.nav button{
+  border:0;
+  background:transparent;
+  color:#8fa1b5;
+  width:100%;
+  text-align:left;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transition:.2s;
+}
+
+.nav button:hover{
+  background:rgba(56,189,248,.07);
+  color:white;
+}
+
+.nav button.active{
+  background:rgba(56,189,248,.11);
+  color:var(--blue);
+  border-left:3px solid var(--blue);
+}
+
+.nav-icon{
+  width:20px;
+  text-align:center;
+  font-size:16px;
+}
+
+.sidebar-bottom{
+  margin-top:auto;
+  border-top:1px solid var(--border);
+  padding-top:16px;
+}
+
+.system-mini{
+  background:#0b192a;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:13px;
+}
+
+.system-mini-label{
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+
+.system-mini-value{
+  margin-top:7px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12px;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--yellow);
+  box-shadow:0 0 10px currentColor;
+}
+
+.online .dot{
+  background:var(--green);
+}
+
+.offline .dot{
+  background:var(--red);
+}
+
+/* ================= MAIN ================= */
+
+.main{
+  margin-left:var(--sidebar);
+  min-height:100vh;
+}
+
+.topbar{
+  height:76px;
+  padding:0 30px;
+  border-bottom:1px solid var(--border);
+  background:rgba(7,17,31,.78);
+  backdrop-filter:blur(18px);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.page-title h1{
+  font-size:20px;
+  font-weight:650;
+}
+
+.page-title p{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:4px;
+}
+
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.connection{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--border);
+  background:#0c1a2b;
+  padding:9px 13px;
+  border-radius:20px;
+  font-size:11px;
+  color:#9badc0;
+}
+
+.connection.connected{
+  color:#a7f3d0;
+}
+
+.connection.disconnected{
+  color:#fca5a5;
+}
+
+.clock{
+  color:var(--muted);
+  font-size:11px;
+}
+
+/* ================= CONTENT ================= */
+
+.content{
+  padding:26px 30px 45px;
+  max-width:1700px;
+}
+
+.section{
+  display:none;
+}
+
+.section.active{
+  display:block;
+}
+
+/* ================= ALERT ================= */
+
+.alert{
+  min-height:115px;
+  border:1px solid rgba(34,197,94,.3);
+  background:linear-gradient(110deg,rgba(34,197,94,.10),rgba(34,197,94,.025));
+  border-radius:16px;
+  padding:23px 26px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:22px;
+  transition:.3s;
+}
+
+.alert.danger{
+  border-color:rgba(239,68,68,.6);
+  background:linear-gradient(110deg,rgba(239,68,68,.18),rgba(127,29,29,.07));
+  animation:alertPulse 1.7s infinite;
+}
+
+@keyframes alertPulse{
+  0%,100%{box-shadow:0 0 0 rgba(239,68,68,0)}
+  50%{box-shadow:0 0 30px rgba(239,68,68,.13)}
+}
+
+.alert-left{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.alert-icon{
+  width:55px;
+  height:55px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(34,197,94,.12);
+  color:var(--green);
+  font-size:25px;
+}
+
+.danger .alert-icon{
+  background:rgba(239,68,68,.15);
+  color:var(--red);
+}
+
+.alert-label{
+  color:#7f95aa;
+  text-transform:uppercase;
+  letter-spacing:1.4px;
+  font-size:10px;
+  font-weight:700;
+}
+
+.alert-title{
+  font-size:22px;
+  font-weight:700;
+  margin-top:6px;
+}
+
+.alert-sub{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:5px;
+}
+
+.alert-time{
+  text-align:right;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.alert-time strong{
+  display:block;
+  color:white;
+  font-size:13px;
+  margin-top:4px;
+}
+
+/* ================= CARDS ================= */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.card{
+  background:linear-gradient(145deg,rgba(16,31,51,.92),rgba(10,24,41,.92));
+  border:1px solid var(--border);
+  border-radius:15px;
+  padding:19px;
+  box-shadow:0 12px 35px rgba(0,0,0,.13);
+}
+
+.card:hover{
+  border-color:rgba(56,189,248,.18);
+}
+
+.metric{
+  min-height:155px;
+}
+
+.card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.card-title{
+  color:#8296ab;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:1.1px;
+  font-weight:700;
+}
+
+.sensor-icon{
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:rgba(56,189,248,.09);
+  color:var(--blue);
+}
+
+.metric-value{
+  font-size:29px;
+  font-weight:700;
+  margin-top:17px;
+  letter-spacing:-.5px;
+}
+
+.metric-value small{
+  color:#7e93a8;
+  font-size:12px;
+  font-weight:500;
+}
+
+.metric-footer{
+  display:flex;
+  justify-content:space-between;
+  color:#61768b;
+  font-size:10px;
+  margin-top:13px;
+}
+
+.progress{
+  height:5px;
+  background:#17283b;
+  border-radius:10px;
+  margin-top:12px;
+  overflow:hidden;
+}
+
+.progress span{
+  height:100%;
+  display:block;
+  width:0%;
+  border-radius:10px;
+  background:var(--blue);
+  transition:width .5s;
+}
+
+/* ================= OVERVIEW ================= */
+
+.two-col{
+  display:grid;
+  grid-template-columns:1.45fr .8fr;
+  gap:15px;
+  margin-top:15px;
+}
+
+.card-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.card-heading h3{
+  font-size:14px;
+}
+
+.card-heading span{
+  font-size:10px;
+  color:var(--muted);
+}
+
+.chart{
+  width:100%;
+  height:240px;
+  position:relative;
+}
+
+canvas{
+  width:100%;
+  height:100%;
+}
+
+/* ================= HAZARD ================= */
+
+.hazard-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.hazard-card{
+  padding:22px;
+  min-height:180px;
+  border-radius:15px;
+  border:1px solid var(--border);
+  background:#0c1a2b;
+}
+
+.hazard-card.active{
+  border-color:rgba(239,68,68,.6);
+  background:rgba(239,68,68,.08);
+  box-shadow:0 0 25px rgba(239,68,68,.08);
+}
+
+.hazard-symbol{
+  font-size:27px;
+  margin-bottom:17px;
+}
+
+.hazard-card h3{
+  font-size:14px;
+}
+
+.hazard-card p{
+  color:var(--muted);
+  font-size:10px;
+  margin-top:7px;
+  line-height:1.5;
+}
+
+.hazard-state{
+  margin-top:18px;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--green);
+}
+
+.active .hazard-state{
+  color:var(--red);
+}
+
+/* ================= TABLE ================= */
+
+.table-wrap{
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11px;
+}
+
+th{
+  text-align:left;
+  color:#647a90;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding:12px;
+  border-bottom:1px solid var(--border);
+}
+
+td{
+  padding:13px 12px;
+  border-bottom:1px solid rgba(255,255,255,.045);
+  color:#b4c3d2;
+}
+
+.badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:20px;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+.badge.safe{
+  color:#86efac;
+  background:rgba(34,197,94,.09);
+}
+
+.badge.danger{
+  color:#fca5a5;
+  background:rgba(239,68,68,.1);
+}
+
+/* ================= DEVICE ================= */
+
+.device-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  padding:14px 0;
+}
+
+.info-row:last-child{
+  border-bottom:0;
+}
+
+.info-label{
+  color:var(--muted);
+  font-size:11px;
+}
+
+.info-value{
+  font-size:11px;
+  font-weight:600;
+}
+
+.health{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin:20px 0;
+}
+
+.health-circle{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:5px solid var(--green);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.health-text strong{
+  display:block;
+  font-size:14px;
+}
+
+.health-text span{
+  color:var(--muted);
+  font-size:10px;
+}
+
+/* ================= LIVE SENSOR ================= */
+
+.sensor-list{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:15px;
+}
+
+.sensor-row{
+  padding:18px;
+}
+
+.sensor-row-head{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+
+.sensor-row-name{
+  font-size:12px;
+  font-weight:600;
+}
+
+.sensor-row-value{
+  color:var(--blue);
+  font-size:13px;
+  font-weight:bold;
+}
+
+.bar{
+  height:7px;
+  background:#17283a;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.bar span{
+  display:block;
+  width:0;
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--blue));
+  transition:.5s;
+}
+
+/* ================= FOOTER ================= */
+
+.footer{
+  margin-top:25px;
+  padding:16px 0;
+  border-top:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  color:#52667b;
+  font-size:9px;
+}
+
+/* ================= MOBILE ================= */
+
+.mobile-menu{
+  display:none;
+}
+
+@media(max-width:1100px){
+  .grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .hazard-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .two-col,
+  .device-layout{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:750px){
+
+  :root{
+    --sidebar:0px;
+  }
+
+  .sidebar{
+    transform:translateX(-100%);
+    transition:.25s;
+    width:250px;
+  }
+
+  .sidebar.open{
+    transform:translateX(0);
+  }
+
+  .mobile-menu{
+    display:block;
+    border:0;
+    background:transparent;
+    color:white;
+    font-size:22px;
+    cursor:pointer;
+    margin-right:10px;
+  }
+
+  .topbar{
+    padding:0 15px;
+  }
+
+  .content{
+    padding:18px 15px;
+  }
+
+  .clock{
+    display:none;
+  }
+
+  .grid,
+  .hazard-grid,
+  .sensor-list{
+    grid-template-columns:1fr;
+  }
+
+  .alert{
+    align-items:flex-start;
+  }
+
+  .alert-time{
+    display:none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= SIDEBAR ================= -->
+
+<aside class="sidebar" id="sidebar">
+
+  <div class="logo">
+    <div class="logo-icon">◈</div>
+    <div>
+      <h2>SANKAT-NET</h2>
+      <span>ENVIRONMENTAL INTELLIGENCE</span>
+    </div>
+  </div>
+
+  <div class="nav-title">Monitoring</div>
+
+  <nav class="nav">
+
+    <button class="active" onclick="showSection('overview',this)">
+      <span class="nav-icon">⌂</span>
+      Overview
+    </button>
+
+    <button onclick="showSection('sensors',this)">
+      <span class="nav-icon">◉</span>
+      Live Sensors
+    </button>
+
+    <button onclick="showSection('hazards',this)">
+      <span class="nav-icon">⚠</span>
+      Hazard Intelligence
+    </button>
+
+    <button onclick="showSection('events',this)">
+      <span class="nav-icon">≡</span>
+      Event Log
+    </button>
+
+  </nav>
+
+  <div class="nav-title" style="margin-top:24px;">System</div>
+
+  <nav class="nav">
+
+    <button onclick="showSection('device',this)">
+      <span class="nav-icon">▣</span>
+      Device Health
+    </button>
+
+    <button onclick="showSection('network',this)">
+      <span class="nav-icon">⌁</span>
+      Network / MQTT
+    </button>
+
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="system-mini" id="miniConnection">
+      <div class="system-mini-label">System connection</div>
+      <div class="system-mini-value">
+        <span class="dot"></span>
+        <span id="miniConnText">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ================= MAIN ================= -->
+
+<main class="main">
+
+<header class="topbar">
+
+  <div style="display:flex;align-items:center;">
+    <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+
+    <div class="page-title">
+      <h1 id="pageTitle">Environmental Overview</h1>
+      <p>Real-time hazard detection & distributed sensor intelligence</p>
+    </div>
+  </div>
+
+  <div class="top-actions">
+
+    <div class="clock" id="clock">
+      --:--:--
+    </div>
+
+    <div class="connection" id="connectionStatus">
+      <span class="dot"></span>
+      <span id="connectionText">MQTT CONNECTING</span>
+    </div>
+
+  </div>
+
+</header>
+
+<div class="content">
+
+<!-- ================= OVERVIEW ================= -->
+
+<section id="overview" class="section active">
+
+  <div class="alert" id="alertBanner">
+
+    <div class="alert-left">
+
+      <div class="alert-icon" id="alertIcon">
+        ✓
+      </div>
+
+      <div>
+        <div class="alert-label">Environmental Status</div>
+
+        <div class="alert-title" id="alertTitle">
+          SYSTEM NORMAL
+        </div>
+
+        <div class="alert-sub" id="alertSub">
+          No environmental hazards detected
+        </div>
+      </div>
+
+    </div>
+
+    <div class="alert-time">
+      LAST DATA PACKET
+      <strong id="lastUpdate">Waiting...</strong>
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Water Level</span>
+        <span class="sensor-icon">≋</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-water">--</span>
+        <small>%</small>
+      </div>
+
+      <div class="progress">
+        <span id="bar-water"></span>
+      </div>
+
+      <div class="metric-footer">
+        <span>Flood indicator</span>
+        <span id="water-state">Normal</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Temperature</span>
+        <span class="sensor-icon">°</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-temp">--</span>
+        <small>°C</small>
+      </div>
+
+      <div class="metric-footer">
+        <span>Atmospheric</span>
+        <span id="temp-state">Normal</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Gas / Smoke</span>
+        <span class="sensor-icon">◌</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-gas">--</span>
+        <small>V</small>
+      </div>
+
+      <div class="progress">
+        <span id="bar-gas"></span>
+      </div>
+
+      <div class="metric-footer">
+        <span>MQ-2 analog</span>
+        <span id="gas-state">Normal</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Pressure</span>
+        <span class="sensor-icon">⌁</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-pres">--</span>
+        <small>hPa</small>
+      </div>
+
+      <div class="metric-footer">
+        <span>BMP180</span>
+        <span>Atmospheric</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Max Acceleration</span>
+        <span class="sensor-icon">✣</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-accel">--</span>
+        <small>m/s²</small>
+      </div>
+
+      <div class="metric-footer">
+        <span>MPU6050</span>
+        <span id="motion-state">Stable</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Battery</span>
+        <span class="sensor-icon">▮</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="val-batt-pct">--</span>
+        <small>%</small>
+      </div>
+
+      <div class="progress">
+        <span id="bar-battery"></span>
+      </div>
+
+      <div class="metric-footer">
+        <span id="val-batt-volts">-- V</span>
+        <span id="battery-state">Power</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Data Packets</span>
+        <span class="sensor-icon">↯</span>
+      </div>
+
+      <div class="metric-value">
+        <span id="packetCount">0</span>
+      </div>
+
+      <div class="metric-footer">
+        <span>MQTT received</span>
+        <span>Live</span>
+      </div>
+    </div>
+
+
+    <div class="card metric">
+      <div class="card-head">
+        <span class="card-title">Device Status</span>
+        <span class="sensor-icon">●</span>
+      </div>
+
+      <div class="metric-value" style="font-size:21px;" id="deviceStatus">
+        OFFLINE
+      </div>
+
+      <div class="metric-footer">
+        <span>ESP32-S3</span>
+        <span id="deviceStatusSub">Waiting</span>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="two-col">
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>Sensor Activity</h3>
+        <span>Last 60 readings</span>
+      </div>
+
+      <div class="chart">
+        <canvas id="sensorChart"></canvas>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>Hazard Summary</h3>
+        <span>Real-time</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Current condition</span>
+        <span class="info-value" id="summaryHazard">NORMAL</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Water level</span>
+        <span class="info-value" id="summaryWater">-- %</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Temperature</span>
+        <span class="info-value" id="summaryTemp">-- °C</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Gas voltage</span>
+        <span class="info-value" id="summaryGas">-- V</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Motion</span>
+        <span class="info-value" id="summaryMotion">-- m/s²</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= LIVE SENSORS ================= -->
+
+<section id="sensors" class="section">
+
+  <div class="card" style="margin-bottom:15px;">
+    <div class="card-heading">
+      <h3>Live Sensor Telemetry</h3>
+      <span id="sensorTimestamp">No data</span>
+    </div>
+  </div>
+
+  <div class="sensor-list">
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Water Level</span>
+        <span class="sensor-row-value" id="liveWater">-- %</span>
+      </div>
+      <div class="bar"><span id="liveWaterBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Temperature</span>
+        <span class="sensor-row-value" id="liveTemp">-- °C</span>
+      </div>
+      <div class="bar"><span id="liveTempBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Gas / Smoke</span>
+        <span class="sensor-row-value" id="liveGas">-- V</span>
+      </div>
+      <div class="bar"><span id="liveGasBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Pressure</span>
+        <span class="sensor-row-value" id="livePressure">-- hPa</span>
+      </div>
+      <div class="bar"><span id="livePressureBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Acceleration X</span>
+        <span class="sensor-row-value" id="liveAX">-- m/s²</span>
+      </div>
+      <div class="bar"><span id="liveAXBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Acceleration Y</span>
+        <span class="sensor-row-value" id="liveAY">-- m/s²</span>
+      </div>
+      <div class="bar"><span id="liveAYBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Acceleration Z</span>
+        <span class="sensor-row-value" id="liveAZ">-- m/s²</span>
+      </div>
+      <div class="bar"><span id="liveAZBar"></span></div>
+    </div>
+
+    <div class="card sensor-row">
+      <div class="sensor-row-head">
+        <span class="sensor-row-name">Battery</span>
+        <span class="sensor-row-value" id="liveBattery">-- %</span>
+      </div>
+      <div class="bar"><span id="liveBatteryBar"></span></div>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= HAZARDS ================= -->
+
+<section id="hazards" class="section">
+
+  <div class="card" style="margin-bottom:15px;">
+    <div class="card-heading">
+      <h3>Hazard Intelligence</h3>
+      <span>Automated threshold analysis</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">Active hazard</span>
+      <span class="info-value" id="hazardCurrent">NONE</span>
+    </div>
+  </div>
+
+  <div class="hazard-grid">
+
+    <div class="hazard-card" id="hazardFlood">
+      <div class="hazard-symbol">≋</div>
+      <h3>Flood Risk</h3>
+      <p>Water-level monitoring for rising water conditions.</p>
+      <div class="hazard-state" id="floodState">● NORMAL</div>
+    </div>
+
+    <div class="hazard-card" id="hazardFire">
+      <div class="hazard-symbol">△</div>
+      <h3>Fire / Smoke</h3>
+      <p>Temperature and gas/smoke sensor correlation.</p>
+      <div class="hazard-state" id="fireState">● NORMAL</div>
+    </div>
+
+    <div class="hazard-card" id="hazardLand">
+      <div class="hazard-symbol">⌁</div>
+      <h3>Landslide / Movement</h3>
+      <p>Accelerometer and gyroscope based movement detection.</p>
+      <div class="hazard-state" id="landState">● NORMAL</div>
+    </div>
+
+    <div class="hazard-card">
+      <div class="hazard-symbol">◎</div>
+      <h3>System Health</h3>
+      <p>Connectivity, battery and telemetry availability.</p>
+      <div class="hazard-state" id="systemState">● ONLINE</div>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= EVENTS ================= -->
+
+<section id="events" class="section">
+
+  <div class="card">
+
+    <div class="card-heading">
+      <h3>Environmental Event Log</h3>
+      <span id="eventCount">0 events</span>
+    </div>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Hazard</th>
+            <th>Water</th>
+            <th>Temperature</th>
+            <th>Gas</th>
+            <th>Acceleration</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody id="eventTable">
+          <tr>
+            <td colspan="7" style="text-align:center;color:#53687c;">
+              Waiting for environmental events...
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= DEVICE ================= -->
+
+<section id="device" class="section">
+
+  <div class="device-layout">
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>Device Health</h3>
+        <span>ESP32-S3</span>
+      </div>
+
+      <div class="health">
+
+        <div class="health-circle" id="healthCircle">
+          100%
+        </div>
+
+        <div class="health-text">
+          <strong id="healthText">Operational</strong>
+          <span id="healthSub">Telemetry receiving normally</span>
+        </div>
+
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Device</span>
+        <span class="info-value">ESP32-S3</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Battery</span>
+        <span class="info-value" id="deviceBattery">-- %</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Battery voltage</span>
+        <span class="info-value" id="deviceVoltage">-- V</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Last packet</span>
+        <span class="info-value" id="deviceLastPacket">--</span>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>Connected Sensors</h3>
+        <span>Hardware telemetry</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Water Sensor</span>
+        <span class="badge safe">ACTIVE</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">MQ-2 Gas Sensor</span>
+        <span class="badge safe">ACTIVE</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">MPU6050 IMU</span>
+        <span class="badge safe">ACTIVE</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">BMP180</span>
+        <span class="badge safe">ACTIVE</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Battery Monitor</span>
+        <span class="badge safe">ACTIVE</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================= NETWORK ================= -->
+
+<section id="network" class="section">
+
+  <div class="device-layout">
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>MQTT Connection</h3>
+        <span id="mqttNetworkStatus">Checking</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Broker</span>
+        <span class="info-value">broker.hivemq.com</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Transport</span>
+        <span class="info-value">WebSockets / TLS</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Port</span>
+        <span class="info-value">8884</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Topic</span>
+        <span class="info-value" style="max-width:230px;text-align:right;word-break:break-all;">
+          sih2026/esp32_s3/sensors/492837
+        </span>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <div class="card-heading">
+        <h3>Telemetry Statistics</h3>
+        <span>Session</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Packets received</span>
+        <span class="info-value" id="networkPackets">0</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Hazard events</span>
+        <span class="info-value" id="networkHazards">0</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Connection state</span>
+        <span class="info-value" id="networkConnection">CONNECTING</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Client ID</span>
+        <span class="info-value" id="clientIdDisplay">--</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<div class="footer">
+  <span>SANKAT-NET • ENVIRONMENTAL MONITORING PLATFORM</span>
+  <span>ESP32-S3 • MQTT • REAL-TIME TELEMETRY</span>
+</div>
+
+</div>
+</main>
+
+
+<script>
+
+/* =========================================================
+   MQTT CONFIGURATION
+   ========================================================= */
+
+const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
+
+const topic = 'sih2026/esp32_s3/sensors/492837';
+
+const clientId =
+  'web_client_' +
+  Math.random().toString(16).substring(2,10);
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let packetCount = 0;
+let hazardCount = 0;
+let events = [];
+
+let waterHistory = [];
+let tempHistory = [];
+let gasHistory = [];
+
+const MAX_HISTORY = 60;
+
+
+/* =========================================================
+   DOM HELPERS
+   ========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const safeNumber = (value, fallback=0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+
+/* =========================================================
+   CLOCK
+   ========================================================= */
+
+function updateClock(){
+
+  const now = new Date();
+
+  $('clock').textContent =
+    now.toLocaleTimeString([],{
+      hour:'2-digit',
+      minute:'2-digit',
+      second:'2-digit'
+    });
+
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+const titles = {
+
+  overview:'Environmental Overview',
+
+  sensors:'Live Sensor Telemetry',
+
+  hazards:'Hazard Intelligence',
+
+  events:'Environmental Event Log',
+
+  device:'Device Health',
+
+  network:'Network & MQTT'
+
+};
+
+
+function showSection(section,button){
+
+  document.querySelectorAll('.section')
+    .forEach(s => s.classList.remove('active'));
+
+  $(section).classList.add('active');
+
+  document.querySelectorAll('.nav button')
+    .forEach(b => b.classList.remove('active'));
+
+  if(button){
+    button.classList.add('active');
+  }
+
+  $('pageTitle').textContent = titles[section] || 'Dashboard';
+
+  if(window.innerWidth < 750){
+    $('sidebar').classList.remove('open');
+  }
+
+  if(section === 'overview'){
+    setTimeout(drawChart,50);
+  }
+
+}
+
+
+function toggleSidebar(){
+
+  $('sidebar').classList.toggle('open');
+
+}
+
+
+/* =========================================================
+   CONNECTION UI
+   ========================================================= */
+
+function setConnection(online,text){
+
+  const box = $('connectionStatus');
+  const mini = $('miniConnection');
+
+  box.className =
+    'connection ' +
+    (online ? 'connected':'disconnected');
+
+  mini.className =
+    'system-mini ' +
+    (online ? 'online':'offline');
+
+  $('connectionText').textContent = text;
+
+  $('miniConnText').textContent =
+    online ? 'MQTT Online':'MQTT Offline';
+
+  $('networkConnection').textContent =
+    online ? 'CONNECTED':'DISCONNECTED';
+
+  $('mqttNetworkStatus').textContent =
+    online ? 'ONLINE':'OFFLINE';
+
+}
+
+
+/* =========================================================
+   MQTT
+   ========================================================= */
+
+$('clientIdDisplay').textContent = clientId;
+
+const client = mqtt.connect(brokerUrl,{
+
+  clientId:clientId,
+
+  clean:true,
+
+  connectTimeout:4000,
+
+  reconnectPeriod:1000
+
+});
+
+
+client.on('connect',()=>{
+
+  console.log('MQTT connected');
+
+  setConnection(true,'MQTT LIVE');
+
+  client.subscribe(topic,(err)=>{
+
+    if(err){
+
+      console.error('Subscription failed',err);
+
+      setConnection(false,'SUBSCRIBE ERROR');
+
+      return;
+
+    }
+
+    console.log('Subscribed:',topic);
+
+  });
+
+});
+
+
+client.on('reconnect',()=>{
+
+  setConnection(false,'MQTT RECONNECTING');
+
+});
+
+
+client.on('offline',()=>{
+
+  setConnection(false,'MQTT OFFLINE');
+
+});
+
+
+client.on('error',(error)=>{
+
+  console.error('MQTT error:',error);
+
+});
+
+
+/* =========================================================
+   MESSAGE HANDLER
+   ========================================================= */
+
+client.on('message',(receivedTopic,message)=>{
+
+  if(receivedTopic !== topic) return;
+
+  try{
+
+    const data = JSON.parse(message.toString());
+
+    console.log('MQTT DATA:',data);
+
+    updateDashboard(data);
+
+  }catch(error){
+
+    console.error('Invalid JSON:',error);
+
+  }
+
+});
+
+
+/* =========================================================
+   DASHBOARD UPDATE
+   ========================================================= */
+
+function updateDashboard(data){
+
+  packetCount++;
+
+  $('packetCount').textContent = packetCount;
+  $('networkPackets').textContent = packetCount;
+
+  const water =
+    safeNumber(data.water_level_pct);
+
+  const temp =
+    safeNumber(data.temperature_c);
+
+  const gas =
+    safeNumber(data.gas_voltage);
+
+  const pressure =
+    safeNumber(data.pressure_hpa);
+
+  const ax =
+    safeNumber(data.accel_x);
+
+  const ay =
+    safeNumber(data.accel_y);
+
+  const az =
+    safeNumber(data.accel_z);
+
+  const battery =
+    safeNumber(data.battery_pct);
+
+  const batteryVoltage =
+    safeNumber(data.battery_volts);
+
+  const maxAccel =
+    Math.max(
+      Math.abs(ax),
+      Math.abs(ay),
+      Math.abs(az)
+    );
+
+
+  /* ================= MAIN METRICS ================= */
+
+  $('val-water').textContent = water.toFixed(1);
+
+  $('val-temp').textContent = temp.toFixed(1);
+
+  $('val-gas').textContent = gas.toFixed(2);
+
+  $('val-pres').textContent = pressure.toFixed(0);
+
+  $('val-accel').textContent = maxAccel.toFixed(2);
+
+  $('val-batt-pct').textContent = battery.toFixed(0);
+
+  $('val-batt-volts').textContent =
+    batteryVoltage.toFixed(2) + ' V';
+
+
+  /* ================= PROGRESS ================= */
+
+  $('bar-water').style.width =
+    Math.min(100,Math.max(0,water)) + '%';
+
+  $('bar-gas').style.width =
+    Math.min(100,(gas/3.3)*100) + '%';
+
+  $('bar-battery').style.width =
+    Math.min(100,Math.max(0,battery)) + '%';
+
+
+  /* ================= STATES ================= */
+
+  $('water-state').textContent =
+    water > 70 ? 'HIGH':'Normal';
+
+  $('temp-state').textContent =
+    temp > 60 ? 'HIGH':'Normal';
+
+  $('gas-state').textContent =
+    gas > 1.5 ? 'ELEVATED':'Normal';
+
+  $('motion-state').textContent =
+    maxAccel > 4 ? 'UNSTABLE':'Stable';
+
+  $('battery-state').textContent =
+    battery <= 20 ? 'LOW':'Healthy';
+
+
+  /* ================= SUMMARY ================= */
+
+  $('summaryWater').textContent =
+    water.toFixed(1) + ' %';
+
+  $('summaryTemp').textContent =
+    temp.toFixed(1) + ' °C';
+
+  $('summaryGas').textContent =
+    gas.toFixed(2) + ' V';
+
+  $('summaryMotion').textContent =
+    maxAccel.toFixed(2) + ' m/s²';
+
+
+  /* ================= LIVE SENSORS ================= */
+
+  $('liveWater').textContent =
+    water.toFixed(1) + ' %';
+
+  $('liveTemp').textContent =
+    temp.toFixed(1) + ' °C';
+
+  $('liveGas').textContent =
+    gas.toFixed(2) + ' V';
+
+  $('livePressure').textContent =
+    pressure.toFixed(0) + ' hPa';
+
+  $('liveAX').textContent =
+    ax.toFixed(2) + ' m/s²';
+
+  $('liveAY').textContent =
+    ay.toFixed(2) + ' m/s²';
+
+  $('liveAZ').textContent =
+    az.toFixed(2) + ' m/s²';
+
+  $('liveBattery').textContent =
+    battery.toFixed(0) + ' %';
+
+
+  $('liveWaterBar').style.width =
+    Math.min(100,water) + '%';
+
+  $('liveTempBar').style.width =
+    Math.min(100,(temp/100)*100) + '%';
+
+  $('liveGasBar').style.width =
+    Math.min(100,(gas/3.3)*100) + '%';
+
+  $('livePressureBar').style.width =
+    Math.min(100,Math.max(0,((pressure-900)/150)*100)) + '%';
+
+  $('liveAXBar').style.width =
+    Math.min(100,(Math.abs(ax)/8)*100) + '%';
+
+  $('liveAYBar').style.width =
+    Math.min(100,(Math.abs(ay)/8)*100) + '%';
+
+  $('liveAZBar').style.width =
+    Math.min(100,(Math.abs(az)/8)*100) + '%';
+
+  $('liveBatteryBar').style.width =
+    battery + '%';
+
+
+  /* ================= TIMESTAMP ================= */
+
+  const now = new Date();
+
+  const time =
+    now.toLocaleTimeString();
+
+  $('lastUpdate').textContent = time;
+
+  $('sensorTimestamp').textContent =
+    'Updated ' + time;
+
+  $('deviceLastPacket').textContent =
+    time;
+
+
+  /* ================= DEVICE ================= */
+
+  $('deviceStatus').textContent =
+    'ONLINE';
+
+  $('deviceStatusSub').textContent =
+    'Telemetry active';
+
+  $('deviceBattery').textContent =
+    battery.toFixed(0) + ' %';
+
+  $('deviceVoltage').textContent =
+    batteryVoltage.toFixed(2) + ' V';
+
+
+  /* ================= HISTORY ================= */
+
+  waterHistory.push(water);
+  tempHistory.push(temp);
+  gasHistory.push(gas);
+
+  if(waterHistory.length > MAX_HISTORY)
+    waterHistory.shift();
+
+  if(tempHistory.length > MAX_HISTORY)
+    tempHistory.shift();
+
+  if(gasHistory.length > MAX_HISTORY)
+    gasHistory.shift();
+
+  drawChart();
+
+
+  /* ================= HAZARDS ================= */
+
+  const hazardActive =
+    Boolean(data.hazard_active);
+
+  const hazardType =
+    data.hazard_type || 'None';
+
+  updateHazards(
+    hazardActive,
+    hazardType,
+    water,
+    temp,
+    gas,
+    maxAccel
+  );
+
+}
+
+
+/* =========================================================
+   HAZARD PROCESSING
+   ========================================================= */
+
+function updateHazards(
+  active,
+  type,
+  water,
+  temp,
+  gas,
+  accel
+){
+
+  const normalized =
+    type.toLowerCase();
+
+
+  const flood =
+    normalized.includes('flood');
+
+  const fire =
+    normalized.includes('fire') ||
+    normalized.includes('smoke');
+
+  const land =
+    normalized.includes('landslide') ||
+    normalized.includes('movement');
+
+
+  setHazardCard(
+    'hazardFlood',
+    'floodState',
+    flood
+  );
+
+  setHazardCard(
+    'hazardFire',
+    'fireState',
+    fire
+  );
+
+  setHazardCard(
+    'hazardLand',
+    'landState',
+    land
+  );
+
+
+  if(active){
+
+    $('alertBanner')
+      .classList.add('danger');
+
+    $('alertIcon').textContent = '⚠';
+
+    $('alertTitle').textContent =
+      'CRITICAL ALERT';
+
+    $('alertSub').textContent =
+      type.toUpperCase() +
+      ' DETECTED — IMMEDIATE ATTENTION REQUIRED';
+
+    $('summaryHazard').textContent =
+      type.toUpperCase();
+
+    $('hazardCurrent').textContent =
+      type.toUpperCase();
+
+    hazardCount++;
+
+    $('networkHazards').textContent =
+      hazardCount;
+
+    addEvent(
+      type,
+      water,
+      temp,
+      gas,
+      accel
+    );
+
+  }else{
+
+    $('alertBanner')
+      .classList.remove('danger');
+
+    $('alertIcon').textContent = '✓';
+
+    $('alertTitle').textContent =
+      'SYSTEM NORMAL';
+
+    $('alertSub').textContent =
+      'No environmental hazards detected';
+
+    $('summaryHazard').textContent =
+      'NORMAL';
+
+    $('hazardCurrent').textContent =
+      'NONE';
+
+  }
+
+}
+
+
+function setHazardCard(cardId,stateId,active){
+
+  const card = $(cardId);
+
+  card.classList.toggle(
+    'active',
+    active
+  );
+
+  $(stateId).textContent =
+    active ? '● ACTIVE':'● NORMAL';
+
+}
+
+
+/* =========================================================
+   EVENT LOG
+   ========================================================= */
+
+function addEvent(
+  type,
+  water,
+  temp,
+  gas,
+  accel
+){
+
+  const now = new Date();
+
+  events.unshift({
+
+    time:now.toLocaleTimeString(),
+
+    type:type,
+
+    water:water,
+
+    temp:temp,
+
+    gas:gas,
+
+    accel:accel
+
+  });
+
+
+  if(events.length > 50){
+    events.pop();
+  }
+
+  renderEvents();
+
+}
+
+
+function renderEvents(){
+
+  $('eventCount').textContent =
+    events.length +
+    (events.length === 1 ? ' event':' events');
+
+
+  const table =
+    $('eventTable');
+
+
+  if(events.length === 0){
+
+    table.innerHTML = `
+      <tr>
+        <td colspan="7"
+            style="text-align:center;color:#53687c;">
+          No hazard events recorded
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+
+  table.innerHTML =
+    events.map(event => `
+
+      <tr>
+
+        <td>${event.time}</td>
+
+        <td>
+          <strong style="color:#fca5a5;">
+            ${escapeHTML(event.type)}
+          </strong>
+        </td>
+
+        <td>${event.water.toFixed(1)}%</td>
+
+        <td>${event.temp.toFixed(1)}°C</td>
+
+        <td>${event.gas.toFixed(2)}V</td>
+
+        <td>${event.accel.toFixed(2)}m/s²</td>
+
+        <td>
+          <span class="badge danger">
+            ALERT
+          </span>
+        </td>
+
+      </tr>
+
+    `).join('');
+
+}
+
+
+function escapeHTML(value){
+
+  return String(value)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* =========================================================
+   CHART
+   ========================================================= */
+
+function drawChart(){
+
+  const canvas =
+    $('sensorChart');
+
+  if(!canvas) return;
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  if(rect.width === 0) return;
+
+  const dpr =
+    window.devicePixelRatio || 1;
+
+  canvas.width =
+    rect.width * dpr;
+
+  canvas.height =
+    rect.height * dpr;
+
+  const ctx =
+    canvas.getContext('2d');
+
+  ctx.scale(dpr,dpr);
+
+  const width = rect.width;
+  const height = rect.height;
+
+
+  ctx.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  /* Grid */
+
+  ctx.strokeStyle =
+    'rgba(255,255,255,.06)';
+
+  ctx.lineWidth = 1;
+
+  for(let i=0;i<5;i++){
+
+    const y =
+      15 +
+      i*((height-30)/4);
+
+    ctx.beginPath();
+
+    ctx.moveTo(0,y);
+
+    ctx.lineTo(width,y);
+
+    ctx.stroke();
+
+  }
+
+
+  function drawLine(
+    values,
+    maxValue,
+    lineColor
+  ){
+
+    if(values.length < 2)
+      return;
+
+    ctx.strokeStyle =
+      lineColor;
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    values.forEach((value,index)=>{
+
+      const x =
+        (index/(MAX_HISTORY-1)) *
+        width;
+
+      const y =
+        height -
+        20 -
+        ((value/maxValue) *
+        (height-40));
+
+      if(index === 0)
+        ctx.moveTo(x,y);
+      else
+        ctx.lineTo(x,y);
+
+    });
+
+    ctx.stroke();
+
+  }
+
+
+  drawLine(
+    waterHistory,
+    100,
+    '#22d3ee'
+  );
+
+  drawLine(
+    tempHistory,
+    100,
+    '#f59e0b'
+  );
+
+  drawLine(
+    gasHistory,
+    3.3,
+    '#a78bfa'
+  );
+
+
+  /* Legend */
+
+  ctx.font =
+    '10px Segoe UI';
+
+  ctx.fillStyle =
+    '#22d3ee';
+
+  ctx.fillText(
+    'Water',
+    12,
+    18
+  );
+
+  ctx.fillStyle =
+    '#f59e0b';
+
+  ctx.fillText(
+    'Temperature',
+    70,
+    18
+  );
+
+  ctx.fillStyle =
+    '#a78bfa';
+
+  ctx.fillText(
+    'Gas',
+    160,
+    18
+  );
+
+}
+
+
+window.addEventListener(
+  'resize',
+  drawChart
+);
+
+
+/* =========================================================
+   INITIAL STATE
+   ========================================================= */
+
+setConnection(
+  false,
+  'MQTT CONNECTING'
+);
+
+drawChart();
+
+</script>
+
+</body>
+</html>
