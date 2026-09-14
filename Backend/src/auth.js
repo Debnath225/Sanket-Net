@@ -15,6 +15,20 @@ const safeEqual = (first, second) => {
   );
 };
 
+const hashPassword = (password, salt = crypto.randomBytes(16).toString("hex")) =>
+  new Promise((resolve, reject) =>
+    crypto.pbkdf2(password, salt, 120_000, 64, "sha512", (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(`pbkdf2$${salt}$${derivedKey.toString("hex")}`);
+    }),
+  );
+
+const verifyPassword = async (password, storedHash) => {
+  const [algorithm, salt, expected] = String(storedHash || "").split("$");
+  if (algorithm !== "pbkdf2" || !salt || !expected) return false;
+  return safeEqual((await hashPassword(password, salt)).split("$")[2], expected);
+};
+
 export function createAuth(config) {
   const authenticate = (username, password) =>
     typeof username === "string" &&
@@ -22,11 +36,11 @@ export function createAuth(config) {
     safeEqual(username, config.authUsername) &&
     safeEqual(password, config.authPassword);
 
-  const issueToken = () => {
+  const issueToken = (username = config.authUsername, role = "ADMIN") => {
     const now = Math.floor(Date.now() / 1000);
     const payload = {
-      sub: config.authUsername,
-      role: "operator",
+      sub: username,
+      role,
       iat: now,
       exp: now + config.authTokenTtlSeconds,
     };
@@ -48,8 +62,8 @@ export function createAuth(config) {
     try {
       const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
       if (
-        claims.role !== "operator" ||
-        claims.sub !== config.authUsername ||
+        !["ADMIN", "OPERATOR", "VIEWER"].includes(claims.role) ||
+        typeof claims.sub !== "string" ||
         !Number.isFinite(claims.exp) ||
         claims.exp <= Math.floor(Date.now() / 1000)
       )
@@ -69,5 +83,5 @@ export function createAuth(config) {
     next();
   };
 
-  return { authenticate, issueToken, verifyToken, requireAuth };
+  return { authenticate, hashPassword, verifyPassword, issueToken, verifyToken, requireAuth };
 }

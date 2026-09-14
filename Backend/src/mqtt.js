@@ -28,6 +28,9 @@ export function startMqtt(config, store) {
   const client = mqtt.connect(config.mqttUrl, options);
   const topic = `${config.mqttTopicRoot}/+/+`;
 
+  let lastReconnectLog = 0;
+  let lastErrorLog = 0;
+
   client.on("connect", () => {
     client.subscribe(topic, { qos: 1 });
     addRecord(store, "events", {
@@ -36,20 +39,28 @@ export function startMqtt(config, store) {
       at: new Date().toISOString(),
     });
   });
-  client.on("reconnect", () =>
-    addRecord(store, "events", {
-      level: "info",
-      message: "MQTT reconnecting",
-      at: new Date().toISOString(),
-    }),
-  );
-  client.on("error", (error) =>
-    addRecord(store, "events", {
-      level: "error",
-      message: `MQTT error: ${error.message}`,
-      at: new Date().toISOString(),
-    }),
-  );
+  client.on("reconnect", () => {
+    const now = Date.now();
+    if (now - lastReconnectLog > 300_000) {
+      lastReconnectLog = now;
+      addRecord(store, "events", {
+        level: "info",
+        message: "MQTT broker connecting",
+        at: new Date().toISOString(),
+      });
+    }
+  });
+  client.on("error", (error) => {
+    const now = Date.now();
+    if (now - lastErrorLog > 300_000) {
+      lastErrorLog = now;
+      addRecord(store, "events", {
+        level: "error",
+        message: `MQTT error: ${error.message}`,
+        at: new Date().toISOString(),
+      });
+    }
+  });
   client.on("message", (topicName, buffer) => {
     try {
       const payload = JSON.parse(buffer.toString("utf8"));

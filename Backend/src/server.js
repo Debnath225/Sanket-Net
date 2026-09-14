@@ -1,4 +1,5 @@
 import express from "express";
+import crypto from "node:crypto";
 import http from "node:http";
 import { WebSocketServer } from "ws";
 import { config } from "./config.js";
@@ -23,17 +24,63 @@ app.get("/api/health", (_request, response) =>
     at: new Date().toISOString(),
   }),
 );
-app.post("/api/auth/login", (request, response) => {
-  const { username, password } = request.body || {};
-  if (!auth.authenticate(username, password))
+const validUsername = (username) => /^[a-zA-Z0-9_.-]{3,64}$/.test(username);
+const validPassword = (password) => typeof password === "string" && password.length >= 8 && password.length <= 256;
+const sessionResponse = (response, username, role = "ADMIN") => {
+  const session = auth.issueToken(username, role);
+  return response.json({ ...session, user: { username, role } });
+};
+
+const validAccountType = (value) => value === "ADMIN" || value === "OPERATOR";
+const enrollmentCodeMatches = (candidate, expected) => {
+  if (!expected || typeof candidate !== "string") return false;
+  const left = Buffer.from(candidate);
+  const right = Buffer.from(expected);
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+};
+
+app.post("/api/auth/register", async (request, response, next) => {
+  if (!config.allowRegistration) return response.status(403).json({ error: "registration_disabled" });
+  const { username, password, accountType = "OPERATOR", adminCode } = request.body || {};
+  if (typeof username !== "string" || !validUsername(username) || !validPassword(password) || !validAccountType(accountType))
+    return response.status(400).json({ error: "invalid_registration" });
+  if (accountType === "ADMIN" && !enrollmentCodeMatches(adminCode, config.adminRegistrationCode))
+    return response.status(403).json({ error: "invalid_admin_enrollment_code" });
+  try {
+    const user = await store.createUser(username, await auth.hashPassword(password), accountType);
+    return sessionResponse(response, user.username, user.role);
+  } catch (error) {
+    if (error.code === "P2002") return response.status(409).json({ error: "username_taken" });
+    if (error.code === "P2021" || error.code === "USER_DATABASE_UNAVAILABLE") return response.status(503).json({ error: "registration_unavailable" });
+    return next(error);
+  }
+});
+app.post("/api/auth/login", async (request, response, next) => {
+  const { username, password, accountType } = request.body || {};
+  if (typeof username !== "string" || typeof password !== "string")
     return response.status(401).json({ error: "invalid_credentials" });
-  const session = auth.issueToken();
-  response.json({
-    ...session,
-    user: { username: config.authUsername, role: "operator" },
-  });
+  try {
+    const user = await store.findUserByUsername(username);
+    if (user?.active && (await auth.verifyPassword(password, user.passwordHash)))
+      return sessionResponse(response, user.username, user.role);
+    if (auth.authenticate(username, password)) return sessionResponse(response, config.authUsername, "ADMIN");
+    return response.status(401).json({ error: "invalid_credentials" });
+  } catch (error) {
+    if (auth.authenticate(username, password)) return sessionResponse(response, config.authUsername, "ADMIN");
+    if (error.code === "P2021") return response.status(503).json({ error: "registration_unavailable" });
+    return next(error);
+  }
 });
 app.use("/api", auth.requireAuth);
+app.use("/api", async (request, response, next) => {
+  if (request.session.sub === config.authUsername) return next();
+  try {
+    const user = await store.findUserByUsername(request.session.sub);
+    if (!user?.active) return response.status(401).json({ error: "account_inactive" });
+    request.session.role = user.role;
+    return next();
+  } catch (error) { return next(error); }
+});
 app.use("/api", createDashboardRouter(store, config));
 
 app.use((error, _request, response, _next) => {

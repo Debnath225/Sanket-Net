@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
 model Record {
   id        BigInt   @id @default(autoincrement())
   kind      String
@@ -15,4 +21,75 @@ model Record {
 
   @@index([kind, createdAt(sort: Desc)])
   @@map("sankat_records")
+}
+
+model SensorReading {
+  id           BigInt   @id @default(autoincrement())
+  nodeId       String   @map("node_id")
+  topic        String?
+  sequence     Int?
+  capturedAt   DateTime @map("captured_at")
+  receivedAt   DateTime @default(now()) @map("received_at")
+  latitude     Float?
+  longitude    Float?
+  batteryMv    Int?     @map("battery_mv")
+  temperature  Float?
+  humidity     Float?
+  pressure     Float?
+  rainfallMm   Float?   @map("rainfall_mm")
+  waterLevel   Float?   @map("water_level")
+  soilMoisture Float?   @map("soil_moisture")
+  windSpeed    Float?   @map("wind_speed")
+  vibration    Float?
+  mq2          Float?
+  mq135        Float?
+  turbidity    Float?
+  hazard       String?
+  riskScore    Float?   @map("risk_score")
+  prediction   Json?
+  rawPayload   Json     @map("raw_payload")
+  document     String
+  embedding    Json
+
+  @@index([nodeId, capturedAt(sort: Desc)])
+  @@index([receivedAt(sort: Desc)])
+  @@index([hazard, riskScore(sort: Desc)])
+  @@map("sensor_readings")
+}
+
+model User {
+  id           String             @id @default(uuid())
+  username     String             @unique
+  passwordHash String             @map("password_hash")
+  role         UserRole           @default(OPERATOR)
+  active       Boolean            @default(true)
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  @@map("sankat_users")
+}
+
+model ChatConversation {
+  id            String        @id @default(uuid())
+  ownerUsername String        @map("owner_username")
+  title         String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  messages      ChatMessage[]
+
+  @@index([ownerUsername, updatedAt(sort: Desc)])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             BigInt           @id @default(autoincrement())
+  conversationId String           @map("conversation_id")
+  role           String
+  content        String
+  sources        Json?
+  provider       String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
 }

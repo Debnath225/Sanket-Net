@@ -23,6 +23,12 @@ export const config = {
   authPassword: required("AUTH_PASSWORD"),
   authTokenSecret: required("AUTH_TOKEN_SECRET"),
   authTokenTtlSeconds: Number(process.env.AUTH_TOKEN_TTL_SECONDS || 28800),
+  allowRegistration: process.env.ALLOW_REGISTRATION === "true",
+  adminRegistrationCode: required("ADMIN_REGISTRATION_CODE"),
+  llmApiKey: required("LLM_API_KEY"),
+  llmBaseUrl: process.env.LLM_BASE_URL || "https://api.openai.com/v1",
+  llmModel: process.env.LLM_MODEL || "gpt-4.1-mini",
+  llmTimeoutMs: Number(process.env.LLM_TIMEOUT_MS || 15000),
 };
 
 if (

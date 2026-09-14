@@ -67,3 +67,21 @@ Prisma Studio is available with:
 ```powershell
 npm run db:studio
 ```
+
+## RAG assistant
+
+`POST /api/chat` is connected to the dashboard's **Ask Sankat** control. It retrieves and ranks recent live telemetry, alerts, heartbeats, and events locally, and returns the records used under `sources`.
+
+To enable an LLM-written response after retrieval, configure an OpenAI-compatible chat-completions provider in `Backend/.env`:
+
+```env
+LLM_API_KEY=your-provider-key
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4.1-mini
+```
+
+Without `LLM_API_KEY`, the backend still provides a grounded local answer. Keep the API key only in `Backend/.env`, never in the frontend.
+
+## Administration
+
+The backend uses ADMIN, OPERATOR, and VIEWER roles. The configured AUTH_USERNAME signs in as an administrator. Set ALLOW_REGISTRATION=true only when you intentionally need to create new operator accounts. Chat conversations are persisted in PostgreSQL when DATABASE_URL is configured.
